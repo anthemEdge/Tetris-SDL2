@@ -7,60 +7,63 @@
 
 #include "Tetromino.h"
 
-Tetromino::Tetromino() {
+Tetromino::Tetromino() :
+		mTType(-1) {
 }
 
 void Tetromino::generate(int type) {
+
+	// Clear pre-exiting Tetromino
+	mBlockPos.clear();
+
 	// if input is out of range
 	if (type < 0 || type > 6) {
 		type = rand() % 7;
 	}
 
+	// Assign Tetromino type
+	mTType = type;
+
+	// The crs points represent the centre of each block
+
 	switch (type) {
 	case TTYPE_I:
-		mColour = {0x00, 0xFF,0xFF};	// Cyan
 		mBlockPos.push_back(TetrominoCRS(-1.5, -0.5));
 		mBlockPos.push_back(TetrominoCRS(-0.5, -0.5));
 		mBlockPos.push_back(TetrominoCRS(0.5, -0.5));
 		mBlockPos.push_back(TetrominoCRS(1.5, -0.5));
 		break;
-		case TTYPE_O:
-		mColour = {0xFF, 0xFF,0x00};	// Yellow
+	case TTYPE_O:
 		mBlockPos.push_back(TetrominoCRS(-0.5, -0.5));
 		mBlockPos.push_back(TetrominoCRS(0.5, -0.5));
 		mBlockPos.push_back(TetrominoCRS(-0.5, 0.5));
 		mBlockPos.push_back(TetrominoCRS(0.5, 0.5));
 		break;
-		case TTYPE_T:
-		mColour = {0x80, 0x00,0x80};	// Purple
+	case TTYPE_T:
 		mBlockPos.push_back(TetrominoCRS(0, -1));
 		mBlockPos.push_back(TetrominoCRS(-1, 0));
 		mBlockPos.push_back(TetrominoCRS(0, 0));
 		mBlockPos.push_back(TetrominoCRS(1, 0));
 		break;
-		case TTYPE_S:
-		mColour = {0x00, 0xFF,0x00};	// Green
+	case TTYPE_S:
 		mBlockPos.push_back(TetrominoCRS(0, -1));
 		mBlockPos.push_back(TetrominoCRS(1, -1));
 		mBlockPos.push_back(TetrominoCRS(-1, 0));
 		mBlockPos.push_back(TetrominoCRS(0, 0));
 		break;
-		case TTYPE_Z:
-		mColour = {0xFF, 0x00,0x00};	// Red
+	case TTYPE_Z:
 		mBlockPos.push_back(TetrominoCRS(-1, -1));
 		mBlockPos.push_back(TetrominoCRS(0, -1));
 		mBlockPos.push_back(TetrominoCRS(0, 0));
 		mBlockPos.push_back(TetrominoCRS(1, 0));
 		break;
-		case TTYPE_J:
-		mColour = {0x00, 0x00,0xFF};	// Blue
+	case TTYPE_J:
 		mBlockPos.push_back(TetrominoCRS(-1, -1));
 		mBlockPos.push_back(TetrominoCRS(-1, 0));
 		mBlockPos.push_back(TetrominoCRS(0, 0));
 		mBlockPos.push_back(TetrominoCRS(1, 0));
 		break;
-		case TTYPE_L:
-		mColour = {0xFF, 0xA5,0x00};	// Orange
+	case TTYPE_L:
 		mBlockPos.push_back(TetrominoCRS(1, -1));
 		mBlockPos.push_back(TetrominoCRS(-1, 0));
 		mBlockPos.push_back(TetrominoCRS(0, 0));
@@ -93,7 +96,7 @@ vector<TetrominoCRS> Tetromino::getBlockPos() {
 	return mBlockPos;
 }
 
-SDL_Color Tetromino::getColour() {
-	return mColour;
+int Tetromino::getTType() {
+	return mTType;
 }
 

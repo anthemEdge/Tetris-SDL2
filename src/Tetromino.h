@@ -24,7 +24,6 @@ struct TetrominoCRS {
 // CRS short for coordinates reference system
 	double x;
 	double y;
-
 	// simple constructor
 	TetrominoCRS(double x, double y) :
 			x(x), y(y) {
@@ -42,11 +41,12 @@ public:
 
 public:
 	vector<TetrominoCRS> getBlockPos();
-	SDL_Color getColour();
+	int getTType();
 
 private:
 	vector<TetrominoCRS> mBlockPos;
-	SDL_Color mColour;
+	int mTType;
+
 };
 
 #endif /* TETROMINO_H_ */

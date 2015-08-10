@@ -82,7 +82,6 @@ SDL_Renderer* Graphics::getRenderer() {
 	return mRenderer;
 }
 
-
 // Screen size getters
 int Graphics::getScreenWidth() {
 	return SCREEN_WIDTH;
@@ -98,6 +97,9 @@ Graphics::~Graphics() {
 	mRenderer = NULL;
 	SDL_DestroyWindow(mWindow);
 	mWindow = NULL;
+
+	// Quit sub Systems
+	TTF_Quit();
 	SDL_Quit();
 }
 

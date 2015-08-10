@@ -49,6 +49,9 @@ int main() {
 	Playfield playField(graphics.getRenderer());
 	playField.setScreenSize(graphics.getScreenWidth(),
 			graphics.getScreenHeight());
+	LTimer playFieldTimer;
+
+	// Pause game status
 
 	// Game loop
 	while (!quit) {
@@ -69,11 +72,11 @@ int main() {
 		while (SDL_PollEvent(&event) != 0) {
 			if (event.type == SDL_QUIT) {
 				quit = true;
+			} else if (event.key.keysym.sym == SDLK_q) {
 			} else {
 				playField.handleEvent(event);
 			}
 		}
-
 
 		// Render Loop
 		graphics.clear();
@@ -83,6 +86,9 @@ int main() {
 		fpsTexture.render(Graphics::SCREEN_WIDTH - fpsTexture.getWidth(), 0);
 
 		// Playfield render
+		playField.tic(playFieldTimer.getTicks());
+		playFieldTimer.start();
+
 		playField.draw();
 
 		graphics.render();

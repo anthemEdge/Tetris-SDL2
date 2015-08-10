@@ -8,18 +8,22 @@
 #ifndef PLAYFIELD_H_
 #define PLAYFIELD_H_
 
+#include <iostream> // cout
+
 #include <SDL.h>
 #include <vector>
 #include <stdio.h> // printf
 #include <algorithm> // shuffle
 #include <cstdlib> // rand and srand
 
+using namespace std;
+
 #include "Tetromino.h"
 
 class Playfield {
 public:
 	Playfield(SDL_Renderer* renderer);
-	void tic();
+	void tic(int elapsed);
 	void draw(); // add the grid to render
 	void setScreenSize(int width, int height);
 	void handleEvent(SDL_Event& event);
@@ -37,6 +41,9 @@ private:
 	int screenWidth;
 	int screenHeight;
 
+	static const double DEFAULT_GRAVITY = 1 / 1000.0; //  grid per millisecond
+	double mGravityModifier;
+
 	Tetromino mCurrentTetromino;
 	double mCurrentPosX;
 	double mCurrentPosY;
@@ -45,6 +52,16 @@ private:
 
 private:
 	vector<int> randomiser();
+	void checkQueue();
+	void newTetromino();
+	void drawBlock(SDL_Point& topLeft, int tType, bool ghost = false,
+			bool outline = true);
+	bool isLegal(double x, double y);
+	void lock();
+	double project();
+
+private:
+	double roundY(double y);
 
 };
 
