@@ -9,7 +9,8 @@
 
 Playfield::Playfield(SDL_Renderer* renderer) :
 		mRenderer(renderer), screenWidth(0), screenHeight(0), mGravityModifier(
-				1.0), mCurrentPosX(0), mCurrentPosY(23) {
+				1.0), mCurrentPosX(0), mCurrentPosY(0), mFont(NULL), mHoldLock(
+				false) {
 	// Initialise primitive
 	for (int x = 0; x < PF_WIDTH; x++) {
 		for (int y = 0; y < PF_HEIGHT; y++) {
@@ -17,8 +18,9 @@ Playfield::Playfield(SDL_Renderer* renderer) :
 			mPlayField[x][y] = -1;
 		}
 	}
-	mPlayField[8][18] = 4;
-	mPlayField[2][21] = 2;
+
+	// Random seed
+	srand(time(NULL));
 
 	// Colour Array
 	mColourArray.push_back( { 0x00, 0xFF, 0xFF });	// Cyan
@@ -30,8 +32,23 @@ Playfield::Playfield(SDL_Renderer* renderer) :
 	mColourArray.push_back( { 0xFF, 0xA5, 0x00 });	// Orange
 	mColourArray.push_back( { 0xFF, 0xFF, 0xFF });	// white, has a index of 7
 
+	//
+	checkQueue();
+
 	// Genesis
-	mCurrentTetromino.generate();
+	//mCurrentTetromino.generate();
+	newTetromino();
+
+	// Load Text font
+	mFont = TTF_OpenFont("assets/FFFFORWA.TTF", PF_BLOCKSIZE);
+	if (mFont == NULL) {
+		printf("Failed to load font for play field! TTF_Error: %s. \n",
+		TTF_GetError());
+	}
+	mNext.setRenderer(mRenderer);
+	mNext.loadFromRenderedText(mFont, "NEXT:", mColourArray.at(7));
+	mHold.setRenderer(mRenderer);
+	mHold.loadFromRenderedText(mFont, "HOLD: ", mColourArray.at(7));
 
 }
 
@@ -41,17 +58,13 @@ void Playfield::setScreenSize(int width, int height) {
 }
 
 void Playfield::tic(int elapsed) {
-	// the queue for randomly generated tetrominos must have a minmum of 7
-	while (mQueue.size() < 7) {
-		vector<int> newQueue = randomiser();
-		newQueue.insert(newQueue.end(), mQueue.begin(), mQueue.end());
-		mQueue = newQueue;
-	}
 
+	// TODO add lock delay
+
+	checkQueue();
 	// Update y position
 	mCurrentPosY += (DEFAULT_GRAVITY * mGravityModifier * elapsed);
 
-	// To Do: Need to check for legal and bound of the new update
 	// Temp
 	bool newPiece = false;
 
@@ -62,6 +75,7 @@ void Playfield::tic(int elapsed) {
 		mCurrentPosY -= (DEFAULT_GRAVITY * mGravityModifier * elapsed);
 		lock();
 		newPiece = true;
+		//printf("Position Update reversed\n");
 	}
 	// printf("CurrentY: %f\n", mCurrentPosY);
 
@@ -77,7 +91,6 @@ void Playfield::draw() {
 			- (PF_HEIGHT - 1) * PF_BLOCKSIZE };
 
 	// Drawing the play Area
-	//
 	SDL_Rect playArea;
 	playArea.x = playFieldTopLeft.x;
 	playArea.y = playFieldTopLeft.y;
@@ -91,43 +104,22 @@ void Playfield::draw() {
 	SDL_RenderDrawRect(mRenderer, &playArea);
 
 	// Drawing the Current Tetromino and its ghost pieces
-	// Draw X and draw Y are rounded depending on current TType
 	double roundedY = roundY(mCurrentPosY);
-
 	// Centre of the Tetromino on display
 	// -2 on y to correct for hidden rows
-	TetrominoCRS centreOnDisplay(
-			playFieldTopLeft.x + mCurrentPosX * PF_BLOCKSIZE,
-			playFieldTopLeft.y + (roundedY - 2) * PF_BLOCKSIZE);
+	SDL_Point currentCentreOnDisplay;
+	currentCentreOnDisplay.x = (int) (playFieldTopLeft.x
+			+ mCurrentPosX * PF_BLOCKSIZE);
+	currentCentreOnDisplay.y = (int) (playFieldTopLeft.y
+			+ (roundedY - 2) * PF_BLOCKSIZE);
 
-	double ghostY = playFieldTopLeft.y + (project() - 2) * PF_BLOCKSIZE;
+	SDL_Point ghostCenterOnDisplay;
+	ghostCenterOnDisplay.x = currentCentreOnDisplay.x;
+	ghostCenterOnDisplay.y = playFieldTopLeft.y
+			+ (project() - 2) * PF_BLOCKSIZE;
 
-	vector<TetrominoCRS> blockPos = mCurrentTetromino.getBlockPos();
-	for (vector<TetrominoCRS>::iterator it = blockPos.begin();
-			it != blockPos.end(); it++) {
-
-		// Main Tetromino
-		SDL_Point blockTopLeft;
-		// - 0.5 to rechieve the topleft conor
-		blockTopLeft.x = centreOnDisplay.x + (it->x - 0.5) * PF_BLOCKSIZE;
-		blockTopLeft.y = centreOnDisplay.y + (it->y - 0.5) * PF_BLOCKSIZE;
-		if (blockTopLeft.y >= playFieldTopLeft.y) {
-			drawBlock(blockTopLeft, mCurrentTetromino.getTType());
-		}
-
-		// Ghost Tetromino
-
-		SDL_Point ghostTopLeft;
-		ghostTopLeft.x = blockTopLeft.x;
-		ghostTopLeft.y = ghostY + (it->y - 0.5) * PF_BLOCKSIZE;
-
-		if (ghostTopLeft.y >= playFieldTopLeft.y
-				&& ghostTopLeft.y < playArea.y + playArea.h) {
-			drawBlock(ghostTopLeft, mCurrentTetromino.getTType(), true);
-			//printf("Ghost can be draw\n");
-		}
-
-	}
+	drawTetromino(currentCentreOnDisplay, mCurrentTetromino);
+	drawTetromino(ghostCenterOnDisplay, mCurrentTetromino, true);
 
 	// Drawing elements of the board
 	for (int row = 0; row < PF_WIDTH; row++) {
@@ -147,6 +139,34 @@ void Playfield::draw() {
 		}
 	}
 
+	// Drawing text
+	mNext.render(playArea.x + playArea.w + PF_BLOCKSIZE, playFieldTopLeft.y);
+	// Draw upcoming tetromino
+	SDL_Point currentNext;
+	currentNext.x = playArea.x + playArea.w + PF_BLOCKSIZE;
+	currentNext.y = playArea.y + 2 * PF_BLOCKSIZE;
+	for (int i = 1; i < 5; i++) {
+		Tetromino upcoming;
+		upcoming.generate(mQueue.at(mQueue.size() - i));
+		int thickness = 1;
+
+		if (upcoming.getTType() != TTYPE_I) {
+			thickness++;
+		}
+
+		SDL_Point center = topLeftToCenter(currentNext, upcoming.getTType());
+		drawTetromino(center, upcoming);
+		currentNext.y += (thickness + 1) * PF_BLOCKSIZE;
+	}
+
+	// Draw hold text and tetromino
+	SDL_Point holdTopLeft = { playArea.x + playArea.w + PF_BLOCKSIZE,
+			playFieldTopLeft.y + 15 * PF_BLOCKSIZE };
+	mHold.render(holdTopLeft.x, holdTopLeft.y);
+	holdTopLeft.y += 2 * PF_BLOCKSIZE;	// Spacing
+	SDL_Point holdCenter = topLeftToCenter(holdTopLeft,
+			mHoldTetromino.getTType());
+	drawTetromino(holdCenter, mHoldTetromino);
 }
 
 void Playfield::handleEvent(SDL_Event& event) {
@@ -163,7 +183,12 @@ void Playfield::handleEvent(SDL_Event& event) {
 			}
 			break;
 		case SDLK_UP:
-			mCurrentPosY = 18;
+			mCurrentPosY = project();
+			break;
+		case SDLK_DOWN:
+			if (isLegal(mCurrentPosX, mCurrentPosY + 1)) {
+				mCurrentPosY++;
+			}
 			break;
 		case SDLK_SPACE:
 			mCurrentPosY = project();
@@ -182,6 +207,9 @@ void Playfield::handleEvent(SDL_Event& event) {
 				mCurrentTetromino.antiClock();
 			}
 			break;
+		case SDLK_e:
+			hold();
+			break;
 		}
 		// Need to check if the move is legal or out of bound
 	}
@@ -198,13 +226,27 @@ vector<int> Playfield::randomiser() {
 	return random;
 }
 
-void Playfield::newTetromino() {
-	//printf("newPiece\n");
-	// Generate new Piece
-	mCurrentTetromino.generate(mQueue.back());
+void Playfield::checkQueue() {
+	while (mQueue.size() < 7) {
+		vector<int> newQueue = randomiser();
+		newQueue.insert(newQueue.end(), mQueue.begin(), mQueue.end());
+		mQueue = newQueue;
+	}
+}
 
-	// Update new positions
-	switch (mQueue.back()) {
+void Playfield::newTetromino(int tType) {
+//printf("newPiece\n");
+// Generate new Piece
+
+	if (tType == -1) {
+		tType = mQueue.back();
+		// Remove generate piece from the queue
+		mQueue.pop_back();
+	}
+	mCurrentTetromino.generate(tType);
+
+// Update new positions
+	switch (tType) {
 	case TTYPE_I:
 	case TTYPE_O:
 		mCurrentPosX = 5;
@@ -219,12 +261,37 @@ void Playfield::newTetromino() {
 		mCurrentPosY = 1.5;
 		break;
 	}
-	// Remove generate piece from the queue
-	mQueue.pop_back();
+
 }
 
-void Playfield::drawBlock(SDL_Point& topLeft, int tType, bool ghost,
-		bool outline) {
+SDL_Point Playfield::topLeftToCenter(SDL_Point& topLeft, int tType) {
+// This only works for unroated pieces
+
+	SDL_Point center;
+
+// Get piece centre
+	double dx, dy;
+	dx = 2; // Horziontally centred
+	switch (tType) {
+	case TTYPE_I:
+		dy = 1;
+		break;
+	case TTYPE_O:
+		dy = 1;
+		break;
+	default:
+		dy = 1.5;
+		break;
+	}
+
+	center.x = topLeft.x + PF_BLOCKSIZE * dx;
+	center.y = topLeft.y + PF_BLOCKSIZE * dy;
+
+	return center;
+
+}
+
+void Playfield::drawBlock(SDL_Point& topLeft, int tType, bool ghost) {
 	Uint8 transparency = 0xFF;
 
 	if (ghost) {
@@ -233,7 +300,7 @@ void Playfield::drawBlock(SDL_Point& topLeft, int tType, bool ghost,
 		//printf("Drawing ghost at >> %i:%i\n", topLeft.x, topLeft.y);
 	}
 
-	// Forming block
+// Forming block
 	SDL_Rect block;
 
 	block.w = PF_BLOCKSIZE;
@@ -241,33 +308,49 @@ void Playfield::drawBlock(SDL_Point& topLeft, int tType, bool ghost,
 	block.x = topLeft.x;
 	block.y = topLeft.y;
 
-	// Drawing block
+// Drawing block
 	SDL_Color colour = mColourArray.at(tType);
 	SDL_SetRenderDrawColor(mRenderer, colour.r, colour.g, colour.b,
 			transparency);
 	SDL_RenderFillRect(mRenderer, &block);
 
 // Drawing outline
-	if (outline) {
-		SDL_Color white = mColourArray.at(mColourArray.size() - 1);
-		SDL_SetRenderDrawColor(mRenderer, white.r, white.g, white.b,
+	if (!ghost) {
+		SDL_Color outline = { 0x00, 0x00, 0x00 };
+		SDL_SetRenderDrawColor(mRenderer, outline.r, outline.g, outline.b,
 				transparency);
 		SDL_RenderDrawRect(mRenderer, &block);
 	}
+}
 
+void Playfield::drawTetromino(SDL_Point& center, Tetromino& tetromino,
+		bool ghost) {
+
+	vector<TetrominoCRS> blockPos = tetromino.getBlockPos();
+	for (vector<TetrominoCRS>::iterator it = blockPos.begin();
+			it != blockPos.end(); it++) {
+
+		SDL_Point blockTopLeft;
+		// - 0.5 correction to caluclate the topleft conor
+		blockTopLeft.x = center.x + (it->x - 0.5) * PF_BLOCKSIZE;
+		blockTopLeft.y = center.y + (it->y - 0.5) * PF_BLOCKSIZE;
+		if (blockTopLeft.y >= screenHeight - 21 * PF_BLOCKSIZE) {
+			drawBlock(blockTopLeft, tetromino.getTType(), ghost);
+		}
+	}
 }
 
 bool Playfield::isLegal(double x, double y) {
 
 	bool legal = true;
-	// Ronud y
+// Ronud y
 	y = roundY(y);
-	// printf("Legal Ronuded Y : %f\n", y);
+//printf("Legal Ronuded Y : %f\n", y);
 
-	// Check every single block of current Tetromino
+// Check every single block of current Tetromino
 	vector<TetrominoCRS> blockPosArray = mCurrentTetromino.getBlockPos();
 
-	// printf("BlockposArraySize: %i\n", blockPosArray.size());
+// printf("BlockposArraySize: %i\n", blockPosArray.size());
 
 	for (vector<TetrominoCRS>::iterator it = blockPosArray.begin();
 			it != blockPosArray.end(); it++) {
@@ -280,27 +363,33 @@ bool Playfield::isLegal(double x, double y) {
 		// Check for bound
 		if (topLeft.x < 0 || topLeft.x >= PF_WIDTH) {
 			legal = false;
+			//printf("x is out of bound\n");
 		}
 		if (topLeft.y < 0 || topLeft.y >= PF_HEIGHT) {
 			legal = false;
+			//printf("Y is out of bound\n");
+			//printf("CurrentY: %f\n", mCurrentPosY);
+			//printf("top Left Y is : %i\n", topLeft.y);
 		}
 		// Check for collision
 		if (mPlayField[topLeft.x][topLeft.y] != -1) {
 			legal = false;
+			//printf("Collision\n");
 		}
 	}
 
-	// printf("Legal: %i\n", legal);
-
+// printf("Legal: %i\n", legal);
 	return legal;
 }
 
 void Playfield::lock() {
-	//printf("%i is Locked\n", mCurrentTetromino.getTType());
-	// Ronud y
+//printf("%i is Locked\n", mCurrentTetromino.getTType());
+
+	mHoldLock = false;	// Reset holdlock
+// Ronud y
 	double y = roundY(mCurrentPosY);
 
-	// Check every single block of current Tetromino
+// Check every single block of current Tetromino
 	vector<TetrominoCRS> blockPosArray = mCurrentTetromino.getBlockPos();
 	for (vector<TetrominoCRS>::iterator it = blockPosArray.begin();
 			it != blockPosArray.end(); it++) {
@@ -311,8 +400,69 @@ void Playfield::lock() {
 		//printf("Locking X: %i Y: %i", xIndex, yIndex);
 
 		mPlayField[xIndex][yIndex] = mCurrentTetromino.getTType();
-
 	}
+
+// Check for complete here
+	lineCheck();
+}
+
+void Playfield::hold() {
+	if (!mHoldLock) {
+		if (mHoldTetromino.getTType() == -1) {
+			mHoldTetromino.generate(mCurrentTetromino.getTType());
+			newTetromino();
+		} else {
+			int tempType = mCurrentTetromino.getTType();
+			newTetromino(mHoldTetromino.getTType());
+			mHoldTetromino.generate(tempType);
+		}
+	}
+
+	mHoldLock = true;
+}
+
+void Playfield::lineCheck() {
+
+// TODO add line clearing animations
+
+	vector<int> completedLine;
+
+// Check every single row
+	for (int row = 0; row < PF_HEIGHT; row++) {
+		int elementInRow = 0;
+		for (int index = 0; index < PF_WIDTH; index++) {
+			if (mPlayField[index][row] != -1) {
+				elementInRow++;
+			}
+		}
+
+		// if the row is complete
+		if (elementInRow == PF_WIDTH) {
+			// Record completed rows
+			completedLine.push_back(row);
+
+			// empty the row
+			for (int i = 0; i < PF_WIDTH; i++) {
+				mPlayField[i][row] = -1;
+			}
+		}
+	}
+
+// Collide when lines are cleared
+	if (completedLine.size() != 0) {
+		sort(completedLine.begin(), completedLine.end());// From the top of the playfield
+		for (vector<int>::iterator it = completedLine.begin();
+				it != completedLine.end(); it++) {
+
+			for (int row = *it - 1; row >= 0; row--) {
+				for (int index = 0; index < PF_WIDTH; index++) {
+					mPlayField[index][row + 1] = mPlayField[index][row];// move the element down by one
+					mPlayField[index][row] = -1;	// Clear original element
+				}
+			}
+		}
+	}
+
 }
 
 double Playfield::project() {
@@ -333,8 +483,5 @@ double Playfield::roundY(double y) {
 		y = round(y - 0.5) + 0.5;
 	}
 	return y;
-}
-
-Playfield::~Playfield() {
 }
 
