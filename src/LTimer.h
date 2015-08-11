@@ -18,6 +18,7 @@ public:
 	void stop();
 	void pause();
 	void unPause();
+	void reset();
 
 	// Get this timer's time
 	Uint32 getTicks();

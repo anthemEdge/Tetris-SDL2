@@ -44,6 +44,12 @@ void LTimer::unPause() {
 	}
 }
 
+void LTimer::reset() {
+	if (mStarted) {
+		start();
+	}
+}
+
 Uint32 LTimer::getTicks() {
 	Uint32 time = 0;
 	if (mStarted) {

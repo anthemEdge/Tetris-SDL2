@@ -19,6 +19,7 @@
 #include <stdio.h> // printf
 #include <algorithm> // shuffle
 #include <cstdlib> // rand and srand
+#include <sstream>
 
 using namespace std;
 
@@ -44,8 +45,7 @@ private:
 	int screenWidth;
 	int screenHeight;
 
-	static const double DEFAULT_GRAVITY = 1 / 1000.0; //  grid per millisecond
-	double mGravityModifier;
+	int mLevel;
 
 	Tetromino mCurrentTetromino;
 	double mCurrentPosX;
@@ -59,18 +59,23 @@ private:
 	Tetromino mHoldTetromino;
 	bool mHoldLock;
 
+	LTimer mLockDelayTimer;
+	int mLockDelay;
+
 private:
 	vector<int> randomiser();
 	void checkQueue();
 	void newTetromino(int tType = -1);
 	void drawBlock(SDL_Point& topLeft, int tType, bool ghost = false);
 	SDL_Point topLeftToCenter(SDL_Point& topLeft, int tType);
-	void drawTetromino(SDL_Point& center, Tetromino& tetromino, bool ghost = false);
+	void drawTetromino(SDL_Point& center, Tetromino& tetromino, bool ghost =
+			false);
 	bool isLegal(double x, double y);
 
 	void lock();
 	void hold();
 	double project();
+	double backTrack();
 	void lineCheck();
 
 	double roundY(double y);

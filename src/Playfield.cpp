@@ -8,9 +8,9 @@
 #include "Playfield.h"
 
 Playfield::Playfield(SDL_Renderer* renderer) :
-		mRenderer(renderer), screenWidth(0), screenHeight(0), mGravityModifier(
-				1.0), mCurrentPosX(0), mCurrentPosY(0), mFont(NULL), mHoldLock(
-				false) {
+		mRenderer(renderer), screenWidth(0), screenHeight(0), mLevel(1), mCurrentPosX(
+				0), mCurrentPosY(0), mFont(NULL), mHoldLock(false), mLockDelay(
+				500) {
 	// Initialise primitive
 	for (int x = 0; x < PF_WIDTH; x++) {
 		for (int y = 0; y < PF_HEIGHT; y++) {
@@ -59,28 +59,27 @@ void Playfield::setScreenSize(int width, int height) {
 
 void Playfield::tic(int elapsed) {
 
-	// TODO add lock delay
-
 	checkQueue();
-	// Update y position
-	mCurrentPosY += (DEFAULT_GRAVITY * mGravityModifier * elapsed);
 
-	// Temp
-	bool newPiece = false;
+	// Update y position
+	double speed = 0.75 * mLevel / 1000.0; // grid per ms
+	mCurrentPosY += (speed * elapsed);
 
 	// Can't move down anymore
 	if (!isLegal(mCurrentPosX, mCurrentPosY)) {
-		// Reverse position update
-		// THIS IS NOT THE CORRECT METHODE AND WILL CAUSE PIECES TO GO MISING AT HIGH SPEED
-		mCurrentPosY -= (DEFAULT_GRAVITY * mGravityModifier * elapsed);
-		lock();
-		newPiece = true;
-		//printf("Position Update reversed\n");
-	}
-	// printf("CurrentY: %f\n", mCurrentPosY);
+		// Reverse position & change to lowest possile position
+		mCurrentPosY -= (speed * elapsed);
+		mCurrentPosY = project();
 
-	if (newPiece) {
-		newTetromino();
+		// lock delay
+		if (mLockDelayTimer.isStarted()) {
+			if (mLockDelayTimer.getTicks() >= mLockDelay) {
+				lock();
+			}
+		} else {
+			mLockDelayTimer.start();
+		}
+
 	}
 
 }
@@ -167,6 +166,15 @@ void Playfield::draw() {
 	SDL_Point holdCenter = topLeftToCenter(holdTopLeft,
 			mHoldTetromino.getTType());
 	drawTetromino(holdCenter, mHoldTetromino);
+
+	// Draw level info
+	LTexture levelText;
+	levelText.setRenderer(mRenderer);
+	stringstream ss;
+	ss << "Level: ";
+	ss << mLevel;
+	levelText.loadFromRenderedText(mFont, ss.str().c_str(), mColourArray.at(7));
+	levelText.render(playFieldTopLeft.x, playFieldTopLeft.y - 2 * PF_BLOCKSIZE);
 }
 
 void Playfield::handleEvent(SDL_Event& event) {
@@ -175,11 +183,13 @@ void Playfield::handleEvent(SDL_Event& event) {
 		case SDLK_LEFT:
 			if (isLegal(mCurrentPosX - 1, mCurrentPosY)) {
 				mCurrentPosX--;
+				mLockDelayTimer.reset();
 			}
 			break;
 		case SDLK_RIGHT:
 			if (isLegal(mCurrentPosX + 1, mCurrentPosY)) {
 				mCurrentPosX++;
+				mLockDelayTimer.reset();
 			}
 			break;
 		case SDLK_UP:
@@ -193,18 +203,21 @@ void Playfield::handleEvent(SDL_Event& event) {
 		case SDLK_SPACE:
 			mCurrentPosY = project();
 			lock();
-			newTetromino();
 			break;
 		case SDLK_a:
 			mCurrentTetromino.antiClock();
 			if (!isLegal(mCurrentPosX, mCurrentPosY)) {
 				mCurrentTetromino.clock();
+			} else {
+				mLockDelayTimer.reset();
 			}
 			break;
 		case SDLK_o:
 			mCurrentTetromino.clock();
 			if (!isLegal(mCurrentPosX, mCurrentPosY)) {
 				mCurrentTetromino.antiClock();
+			} else {
+				mLockDelayTimer.reset();
 			}
 			break;
 		case SDLK_e:
@@ -402,8 +415,10 @@ void Playfield::lock() {
 		mPlayField[xIndex][yIndex] = mCurrentTetromino.getTType();
 	}
 
-// Check for complete here
-	lineCheck();
+// Check for complete here and generate new
+	lineCheck();	// Check for complete lines
+	newTetromino();		// New pieces
+	mLockDelayTimer.stop();	// stop lock delay timer
 }
 
 void Playfield::hold() {
@@ -447,8 +462,7 @@ void Playfield::lineCheck() {
 			}
 		}
 	}
-
-// Collide when lines are cleared
+	// Collide when lines are cleared
 	if (completedLine.size() != 0) {
 		sort(completedLine.begin(), completedLine.end());// From the top of the playfield
 		for (vector<int>::iterator it = completedLine.begin();
@@ -461,6 +475,29 @@ void Playfield::lineCheck() {
 				}
 			}
 		}
+
+		// Change to level
+		switch (completedLine.size()) {
+		case 1:
+			mLevel += 1;
+			break;
+		case 2:
+			mLevel += 2;
+			break;
+		case 3:
+			mLevel += 4;
+			break;
+		case 4:
+			mLevel += 6;
+			break;
+		}
+
+		// Change to lockdelay
+
+		if (mLevel > 500 && mLevel < 750) {
+			mLockDelay = 1000 - mLevel;
+		}
+
 	}
 
 }
