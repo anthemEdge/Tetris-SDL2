@@ -70,6 +70,9 @@ private:
 
 	bool mGameOver;
 
+	bool mLeft;
+	bool mRight;
+
 private:
 	void init();
 

@@ -10,7 +10,7 @@
 Playfield::Playfield(SDL_Renderer* renderer) :
 		mRenderer(renderer), screenWidth(0), screenHeight(0), mLevel(1), mCurrentPosX(
 				0), mCurrentPosY(0), mFont(NULL), mHoldLock(false), mLockDelay(
-				500), mGameOver(false) {
+				500), mGameOver(false), mLeft(false), mRight(false) {
 
 	// Colour Array
 	mColourArray.push_back( { 0x00, 0xFF, 0xFF });	// Cyan
@@ -63,6 +63,8 @@ void Playfield::reset() {
 	mHoldLock = false;
 	mLockDelay = 500;
 	mGameOver = false;
+	mLeft = false;
+	mRight = false;
 	mQueue.clear();
 	mHoldTetromino.clear();
 	mCurrentTetromino.clear();
@@ -211,61 +213,107 @@ void Playfield::draw() {
 }
 
 void Playfield::handleEvent(SDL_Event& event) {
-	if (event.type == SDL_KEYDOWN && !mGameOver) {
-		switch (event.key.keysym.sym) {
-		case SDLK_LEFT:
-			if (isLegal(mCurrentPosX - 1, mCurrentPosY)) {
-				mCurrentPosX--;
-				mLockDelayTimer.reset();
-			}
-			break;
-		case SDLK_RIGHT:
-			if (isLegal(mCurrentPosX + 1, mCurrentPosY)) {
-				mCurrentPosX++;
-				mLockDelayTimer.reset();
-			}
-			break;
-		case SDLK_UP:
-			mCurrentPosY = project();
-			break;
-		case SDLK_DOWN:
-			if (isLegal(mCurrentPosX, mCurrentPosY + 1)) {
-				mCurrentPosY++;
-			}
-			break;
-		case SDLK_SPACE:
-			mCurrentPosY = project();
-			lock();
-			break;
-		case SDLK_a:
-			mCurrentTetromino.antiClock();
-			if (!isLegal(mCurrentPosX, mCurrentPosY)) {
-				if (!kick()) {
-					mCurrentTetromino.clock();
+	if (!mGameOver) {
+
+//	// KeyState input for better control
+//	const Uint8* currentKeyStates = SDL_GetKeyboardState( NULL);
+//	if (!mGameOver
+//			&& !(currentKeyStates[SDL_SCANCODE_LEFT]
+//					&& currentKeyStates[SDL_SCANCODE_RIGHT])) {
+//		if (currentKeyStates[SDL_SCANCODE_LEFT]) {
+//			if (isLegal(mCurrentPosX - 1, mCurrentPosY)) {
+//				mCurrentPosX--;
+//				mLockDelayTimer.reset();
+//			}
+//		}
+//		if (currentKeyStates[SDL_SCANCODE_RIGHT]) {
+//			if (isLegal(mCurrentPosX + 1, mCurrentPosY)) {
+//				mCurrentPosX++;
+//				mLockDelayTimer.reset();
+//			}
+//		}
+//	}
+
+		if (event.type == SDL_KEYDOWN) {
+			switch (event.key.keysym.sym) {
+			case SDLK_LEFT:
+				mLeft = true;
+				break;
+			case SDLK_RIGHT:
+				mRight = true;
+				break;
+			case SDLK_UP:
+				mCurrentPosY = project();
+				break;
+			case SDLK_DOWN:
+				if (isLegal(mCurrentPosX, mCurrentPosY + 1)) {
+					mCurrentPosY++;
+				}
+				break;
+			case SDLK_SPACE:
+				mCurrentPosY = project();
+				lock();
+				break;
+			case SDLK_a:
+				mCurrentTetromino.antiClock();
+				if (!isLegal(mCurrentPosX, mCurrentPosY)) {
+					if (!kick()) {
+						mCurrentTetromino.clock();
+					} else {
+						mLockDelayTimer.reset();
+					}
 				} else {
 					mLockDelayTimer.reset();
 				}
-			} else {
-				mLockDelayTimer.reset();
-			}
-			break;
-		case SDLK_o:
-			mCurrentTetromino.clock();
-			if (!isLegal(mCurrentPosX, mCurrentPosY)) {
-				if (!kick()) {
-					mCurrentTetromino.antiClock();
+				break;
+			case SDLK_o:
+				mCurrentTetromino.clock();
+				if (!isLegal(mCurrentPosX, mCurrentPosY)) {
+					if (!kick()) {
+						mCurrentTetromino.antiClock();
+					} else {
+						mLockDelayTimer.reset();
+					}
 				} else {
 					mLockDelayTimer.reset();
 				}
-			} else {
-				mLockDelayTimer.reset();
+				break;
+			case SDLK_e:
+				hold();
+				break;
 			}
-			break;
-		case SDLK_e:
-			hold();
-			break;
+			// Need to check if the move is legal or out of bound
+		} else if (event.type == SDL_KEYUP) {
+			switch (event.key.keysym.sym) {
+			case SDLK_LEFT:
+				mLeft = false;
+				break;
+			case SDLK_RIGHT:
+				mRight = false;
+				break;
+			}
+
 		}
-		// Need to check if the move is legal or out of bound
+
+		// Core movement
+		if (!(mLeft && mRight)) {
+			if (mLeft) {
+				if (isLegal(mCurrentPosX - 1, mCurrentPosY)) {
+					mCurrentPosX--;
+					mLockDelayTimer.reset();
+				}
+			}
+			if (mRight) {
+				if (isLegal(mCurrentPosX + 1, mCurrentPosY)) {
+					mCurrentPosX++;
+					mLockDelayTimer.reset();
+				}
+			}
+		}
+
+
+
+
 	}
 }
 
@@ -483,38 +531,33 @@ bool Playfield::kick() {
 	int kickRange = 0;
 	switch (mCurrentTetromino.getTType()) {
 	case TTYPE_I:
-		kickRange = 3;
+		kickRange = 2;
 		break;
 	case TTYPE_O:
 		break;
 	default:
-		kickRange = 3;
+		kickRange = 1;
 		break;
 	}
 	// Floor Kick
-	if ((mCurrentTetromino.getRotation() == 1
-			|| mCurrentTetromino.getRotation() == 3)
-			&& mCurrentPosY >= project()) {
+	if (mCurrentPosY >= project()) {
+		//(mCurrentTetromino.getRotation() == 1 || mCurrentTetromino.getRotation() == 3) secondary condition
 		for (int i = 1; i <= kickRange + 1; i++) {
 			if (isLegal(mCurrentPosX, mCurrentPosY - i)) {
 				mCurrentPosY -= i;
 				kicked = true;
-				printf("FloorKick\n");
 				break;
 			}
 		}
 		// Wall kick
-	} else if ((mCurrentTetromino.getRotation() == 0
-			|| mCurrentTetromino.getRotation() == 2)
-			&& (mCurrentPosX <= 1 || mCurrentPosX >= 9)) {
-
+	} else if (mCurrentPosX <= 1 || mCurrentPosX >= 9) {
+		// (mCurrentTetromino.getRotation() == 0 || mCurrentTetromino.getRotation() == 2)
 		// Left Wall
 		if (mCurrentPosX <= 1) {
 			for (int i = 1; i <= kickRange; i++) {
 				if (isLegal(mCurrentPosX + i, mCurrentPosY)) {
 					mCurrentPosX += i;
 					kicked = true;
-					printf("WallKick\n");
 					break;
 				}
 			}
@@ -525,7 +568,6 @@ bool Playfield::kick() {
 				if (isLegal(mCurrentPosX - i, mCurrentPosY)) {
 					mCurrentPosX -= i;
 					kicked = true;
-					printf("WallKick\n");
 					break;
 				}
 			}
