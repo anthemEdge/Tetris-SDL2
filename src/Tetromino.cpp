@@ -8,7 +8,7 @@
 #include "Tetromino.h"
 
 Tetromino::Tetromino() :
-		mTType(-1) {
+		mTType(-1), mRotation(0) {
 }
 
 void Tetromino::generate(int type) {
@@ -80,6 +80,10 @@ void Tetromino::clock() {
 		it->x = -pos.y;
 		it->y = pos.x;
 	}
+	mRotation++;
+	if (mRotation > 3) {
+		mRotation -= 4;
+	}
 }
 
 void Tetromino::antiClock() {
@@ -89,6 +93,16 @@ void Tetromino::antiClock() {
 		it->x = pos.y;
 		it->y = -pos.x;
 	}
+	mRotation--;
+	if (mRotation < 0) {
+		mRotation += 4;
+	}
+}
+
+void Tetromino::clear() {
+	mBlockPos.clear();
+	mTType = -1;
+	mRotation = 0;
 }
 
 // Getters
@@ -98,5 +112,8 @@ vector<TetrominoCRS> Tetromino::getBlockPos() {
 
 int Tetromino::getTType() {
 	return mTType;
+}
+int Tetromino::getRotation() {
+	return mRotation;
 }
 

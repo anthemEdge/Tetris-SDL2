@@ -16,8 +16,8 @@ using namespace std;
 
 class Graphics {
 public:
-	const static int SCREEN_WIDTH = 700;
-	const static int SCREEN_HEIGHT = 700;
+	const static int SCREEN_WIDTH = 476;
+	const static int SCREEN_HEIGHT = 672;
 
 public:
 	Graphics();

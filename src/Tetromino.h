@@ -42,10 +42,13 @@ public:
 public:
 	vector<TetrominoCRS> getBlockPos();
 	int getTType();
+	int getRotation();
+	void clear();
 
 private:
 	vector<TetrominoCRS> mBlockPos;
 	int mTType;
+	int mRotation;
 
 };
 

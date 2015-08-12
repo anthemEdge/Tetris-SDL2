@@ -32,11 +32,17 @@ public:
 	void draw(); // add the grid to render
 	void setScreenSize(int width, int height);
 	void handleEvent(SDL_Event& event);
+	bool isGameOver();
+	void reset();
 
-private:
+public:
 	static const int PF_WIDTH = 10;
 	static const int PF_HEIGHT = 22;
 	static const int PF_BLOCKSIZE = 28;
+
+private:
+
+	LTimer mGame;
 
 	int mPlayField[PF_WIDTH][PF_HEIGHT];
 	vector<SDL_Color> mColourArray;
@@ -62,7 +68,11 @@ private:
 	LTimer mLockDelayTimer;
 	int mLockDelay;
 
+	bool mGameOver;
+
 private:
+	void init();
+
 	vector<int> randomiser();
 	void checkQueue();
 	void newTetromino(int tType = -1);
@@ -74,6 +84,7 @@ private:
 
 	void lock();
 	void hold();
+	bool kick();
 	double project();
 	double backTrack();
 	void lineCheck();
