@@ -13,7 +13,7 @@ Playfield::Playfield(SDL_Renderer* renderer) :
 				500), mGameOver(false), mLeft(false), mRight(false) {
 
 	// Colour Array
-	mColourArray.push_back( { 0x00, 0xFF, 0xFF });	// Cyan
+	mColourArray.push_back( { 0x00, 0xBF, 0xFF });	// Cyan
 	mColourArray.push_back( { 0xFF, 0xD7, 0x00 });	// Yellow
 	mColourArray.push_back( { 0x80, 0x00, 0x80 });	// Purple
 	mColourArray.push_back( { 0x00, 0xFF, 0x00 });	// Green
@@ -135,8 +135,8 @@ void Playfield::draw() {
 	ghostCenterOnDisplay.y = playFieldTopLeft.y
 			+ (project() - 2) * PF_BLOCKSIZE;
 
-	drawTetromino(currentCentreOnDisplay, mCurrentTetromino);
 	drawTetromino(ghostCenterOnDisplay, mCurrentTetromino, true);
+	drawTetromino(currentCentreOnDisplay, mCurrentTetromino);
 
 // Drawing elements of the board
 	for (int row = 0; row < PF_WIDTH; row++) {
