@@ -152,6 +152,14 @@ int main() {
 					0xFF);
 			SDL_RenderFillRect(graphics.getRenderer(), &playArea);
 
+			if (playField.getLevel() > 1000) {
+				gameOverTexture.loadFromRenderedText(gameOverFont, "You Win!",
+						white);
+			} else {
+				gameOverTexture.loadFromRenderedText(gameOverFont, "GAME OVER!",
+						white);
+			}
+
 			gameOverTexture.render(
 					playArea.x + (playArea.w - gameOverTexture.getWidth()) / 2,
 					playArea.y + playField.PF_BLOCKSIZE);

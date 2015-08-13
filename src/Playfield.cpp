@@ -215,25 +215,6 @@ void Playfield::draw() {
 void Playfield::handleEvent(SDL_Event& event) {
 	if (!mGameOver) {
 
-//	// KeyState input for better control
-//	const Uint8* currentKeyStates = SDL_GetKeyboardState( NULL);
-//	if (!mGameOver
-//			&& !(currentKeyStates[SDL_SCANCODE_LEFT]
-//					&& currentKeyStates[SDL_SCANCODE_RIGHT])) {
-//		if (currentKeyStates[SDL_SCANCODE_LEFT]) {
-//			if (isLegal(mCurrentPosX - 1, mCurrentPosY)) {
-//				mCurrentPosX--;
-//				mLockDelayTimer.reset();
-//			}
-//		}
-//		if (currentKeyStates[SDL_SCANCODE_RIGHT]) {
-//			if (isLegal(mCurrentPosX + 1, mCurrentPosY)) {
-//				mCurrentPosX++;
-//				mLockDelayTimer.reset();
-//			}
-//		}
-//	}
-
 		if (event.type == SDL_KEYDOWN) {
 			switch (event.key.keysym.sym) {
 			case SDLK_LEFT:
@@ -310,9 +291,6 @@ void Playfield::handleEvent(SDL_Event& event) {
 				}
 			}
 		}
-
-
-
 
 	}
 }
@@ -408,7 +386,7 @@ void Playfield::drawBlock(SDL_Point& topLeft, int tType, bool ghost) {
 		//printf("Drawing ghost at >> %i:%i\n", topLeft.x, topLeft.y);
 	}
 
-// Forming block
+	// Forming block
 	SDL_Rect block;
 
 	block.w = PF_BLOCKSIZE;
@@ -416,13 +394,29 @@ void Playfield::drawBlock(SDL_Point& topLeft, int tType, bool ghost) {
 	block.x = topLeft.x;
 	block.y = topLeft.y;
 
-// Drawing block
+	// Drawing block
 	SDL_Color colour = mColourArray.at(tType);
 	SDL_SetRenderDrawColor(mRenderer, colour.r, colour.g, colour.b,
 			transparency);
 	SDL_RenderFillRect(mRenderer, &block);
 
-// Drawing outline
+	// Polish effect
+	if (!ghost) {
+		Uint8 white = 0xFF;
+		int shineSize = PF_BLOCKSIZE / 7;
+		SDL_Rect shine1, shine2, shine3, shine4;
+		shine1 = {block.x, block.y, shineSize,shineSize};
+		shine2 = {block.x + shineSize, block.y + shineSize,shineSize, shineSize};
+		shine3 = {block.x + 2*shineSize, block.y + shineSize, shineSize, shineSize};
+		shine4 = {block.x + shineSize, block.y + 2*shineSize,shineSize, shineSize};
+		SDL_SetRenderDrawColor(mRenderer, white, white, white, white);
+		SDL_RenderFillRect(mRenderer, &shine1);
+		SDL_RenderFillRect(mRenderer, &shine2);
+		SDL_RenderFillRect(mRenderer, &shine3);
+		SDL_RenderFillRect(mRenderer, &shine4);
+	}
+
+	// Drawing outline
 	if (!ghost) {
 		SDL_Color outline = { 0x00, 0x00, 0x00 };
 		SDL_SetRenderDrawColor(mRenderer, outline.r, outline.g, outline.b,
@@ -539,7 +533,7 @@ bool Playfield::kick() {
 		kickRange = 1;
 		break;
 	}
-	// Floor Kick
+// Floor Kick
 	if (mCurrentPosY >= project()) {
 		//(mCurrentTetromino.getRotation() == 1 || mCurrentTetromino.getRotation() == 3) secondary condition
 		for (int i = 1; i <= kickRange + 1; i++) {
@@ -639,6 +633,10 @@ void Playfield::lineCheck() {
 			mLockDelay = 1000 - mLevel;
 		}
 
+		if (mLevel > 1000) {
+			mGameOver = true;
+		}
+
 	}
 
 }
@@ -665,5 +663,9 @@ double Playfield::roundY(double y) {
 
 bool Playfield::isGameOver() {
 	return mGameOver;
+}
+
+int Playfield::getLevel() {
+	return mLevel;
 }
 

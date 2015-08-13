@@ -33,6 +33,7 @@ public:
 	void setScreenSize(int width, int height);
 	void handleEvent(SDL_Event& event);
 	bool isGameOver();
+	int getLevel();
 	void reset();
 
 public:
