@@ -14,12 +14,12 @@ Playfield::Playfield(SDL_Renderer* renderer) :
 
 	// Colour Array
 	mColourArray.push_back( { 0x00, 0xFF, 0xFF });	// Cyan
-	mColourArray.push_back( { 0xFF, 0xFF, 0x00 });	// Yellow
+	mColourArray.push_back( { 0xFF, 0xD7, 0x00 });	// Yellow
 	mColourArray.push_back( { 0x80, 0x00, 0x80 });	// Purple
 	mColourArray.push_back( { 0x00, 0xFF, 0x00 });	// Green
 	mColourArray.push_back( { 0xFF, 0x00, 0x00 });	// Red
 	mColourArray.push_back( { 0x00, 0x00, 0xFF });	// Blue
-	mColourArray.push_back( { 0xFF, 0xA5, 0x00 });	// Orange
+	mColourArray.push_back( { 0xFF, 0x8C, 0x00 });	// Orange
 	mColourArray.push_back( { 0xFF, 0xFF, 0xFF });	// white, has a index of 7
 
 	// Load Text font
@@ -405,24 +405,32 @@ void Playfield::drawBlock(SDL_Point& topLeft, int tType, bool ghost) {
 		Uint8 white = 0xFF;
 		int shineSize = PF_BLOCKSIZE / 7;
 		SDL_Rect shine1, shine2, shine3, shine4;
-		shine1 = {block.x, block.y, shineSize,shineSize};
+		//shine1 = {block.x, block.y, shineSize,shineSize};
 		shine2 = {block.x + shineSize, block.y + shineSize,shineSize, shineSize};
 		shine3 = {block.x + 2*shineSize, block.y + shineSize, shineSize, shineSize};
 		shine4 = {block.x + shineSize, block.y + 2*shineSize,shineSize, shineSize};
 		SDL_SetRenderDrawColor(mRenderer, white, white, white, white);
-		SDL_RenderFillRect(mRenderer, &shine1);
+		//SDL_RenderFillRect(mRenderer, &shine1);
 		SDL_RenderFillRect(mRenderer, &shine2);
 		SDL_RenderFillRect(mRenderer, &shine3);
 		SDL_RenderFillRect(mRenderer, &shine4);
+
+		SDL_Rect shadow1, shadow2;
+		shadow1 = {block.x, block.y + block.h - shineSize, block.w, shineSize};
+		shadow2 = {block.x + block.w - shineSize, block.y, shineSize, block.h};
+		SDL_SetRenderDrawColor(mRenderer, 0x00, 0x00, 0x00, 0xFF);
+		SDL_RenderFillRect(mRenderer, &shadow1);
+		SDL_RenderFillRect(mRenderer, &shadow2);
 	}
 
-	// Drawing outline
-	if (!ghost) {
-		SDL_Color outline = { 0x00, 0x00, 0x00 };
-		SDL_SetRenderDrawColor(mRenderer, outline.r, outline.g, outline.b,
-				transparency);
-		SDL_RenderDrawRect(mRenderer, &block);
-	}
+	// Line is too thick with shadows
+//	// Drawing outline
+//	if (!ghost) {
+//		SDL_Color outline = { 0x00, 0x00, 0x00 };
+//		SDL_SetRenderDrawColor(mRenderer, outline.r, outline.g, outline.b,
+//				transparency);
+//		SDL_RenderDrawRect(mRenderer, &block);
+//	}
 }
 
 void Playfield::drawTetromino(SDL_Point& center, Tetromino& tetromino,
