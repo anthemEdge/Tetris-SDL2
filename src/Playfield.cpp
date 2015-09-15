@@ -483,18 +483,16 @@ bool Playfield::isLegal(double x, double y) {
 		}
 	}
 
-// printf("Legal: %i\n", legal);
 	return legal;
 }
 
 void Playfield::lock() {
-//printf("%i is Locked\n", mCurrentTetromino.getTType());
 
 	mHoldLock = false;	// Reset holdlock
-// Ronud y
+	// Ronud y
 	double y = roundY(mCurrentPosY);
 
-// Check every single block of current Tetromino
+	// Check every single block of current Tetromino
 	vector<TetrominoCRS> blockPosArray = mCurrentTetromino.getBlockPos();
 	for (vector<TetrominoCRS>::iterator it = blockPosArray.begin();
 			it != blockPosArray.end(); it++) {
@@ -502,12 +500,10 @@ void Playfield::lock() {
 		int xIndex = (int) (mCurrentPosX + (it->x - 0.5));
 		int yIndex = (int) (y + (it->y - 0.5));
 
-		//printf("Locking X: %i Y: %i", xIndex, yIndex);
-
 		mPlayField[xIndex][yIndex] = mCurrentTetromino.getTType();
 	}
 
-// Check for complete here and generate new
+	// Check for complete here and generate new
 	lineCheck();	// Check for complete lines
 	newTetromino();		// New pieces
 	mLockDelayTimer.stop();	// stop lock delay timer
@@ -541,7 +537,7 @@ bool Playfield::kick() {
 		kickRange = 1;
 		break;
 	}
-// Floor Kick
+	// Floor Kick
 	if (mCurrentPosY >= project()) {
 		//(mCurrentTetromino.getRotation() == 1 || mCurrentTetromino.getRotation() == 3) secondary condition
 		for (int i = 1; i <= kickRange + 1; i++) {
