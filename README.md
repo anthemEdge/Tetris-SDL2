@@ -3,7 +3,7 @@ A minimalist remake of the classic game Tetris using SDL2.
 
 ------------------------------------------
 
-## [Video Demo](https://www.youtube.com/watch?v=lHHr1B8C16c)
+## [Video Demo](https://youtu.be/Gxpx3hvdxY0)
 
 ## Synopsis
 I absolutely love the game Tetris and it's challenging nature. There are many remakes out there today but most lack certain features and none is perfect in my book. The aim of this project is to create a fast-paced, responsive, challenging Tetris game and pushes the player while providing useful tools to do so. 
