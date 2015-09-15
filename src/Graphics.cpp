@@ -39,7 +39,7 @@ bool Graphics::init() {
 
 // Create and Present a Window
 	if (success) {
-		mWindow = SDL_CreateWindow("Pong", SDL_WINDOWPOS_UNDEFINED,
+		mWindow = SDL_CreateWindow("Tetris", SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 		if (mWindow == NULL) {
 			success = false;

@@ -235,7 +235,7 @@ void Playfield::handleEvent(SDL_Event& event) {
 				mCurrentPosY = project();
 				lock();
 				break;
-			case SDLK_a:
+			case SDLK_z:
 				mCurrentTetromino.antiClock();
 				if (!isLegal(mCurrentPosX, mCurrentPosY)) {
 					if (!kick()) {
@@ -247,7 +247,7 @@ void Playfield::handleEvent(SDL_Event& event) {
 					mLockDelayTimer.reset();
 				}
 				break;
-			case SDLK_o:
+			case SDLK_x:
 				mCurrentTetromino.clock();
 				if (!isLegal(mCurrentPosX, mCurrentPosY)) {
 					if (!kick()) {
@@ -259,7 +259,7 @@ void Playfield::handleEvent(SDL_Event& event) {
 					mLockDelayTimer.reset();
 				}
 				break;
-			case SDLK_e:
+			case SDLK_c:
 				hold();
 				break;
 			}
