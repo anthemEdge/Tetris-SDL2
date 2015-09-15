@@ -21,8 +21,6 @@
 #include "Playfield.h"
 using namespace std;
 
-// TODO Secret mode! https://www.youtube.com/watch?v=y04W3RFKxwk
-
 int main() {
 	// Setup main graphics
 	Graphics graphics;
