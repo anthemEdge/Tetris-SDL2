@@ -50,6 +50,10 @@ void LTimer::reset() {
 	}
 }
 
+void LTimer::addTicks(int ticks) {
+	mStartTicks -= ticks;
+}
+
 Uint32 LTimer::getTicks() {
 	Uint32 time = 0;
 	if (mStarted) {

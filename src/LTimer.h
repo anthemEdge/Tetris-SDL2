@@ -23,6 +23,8 @@ public:
 	// Get this timer's time
 	Uint32 getTicks();
 
+	void addTicks(int ticks);
+
 	// Getters
 	bool isStarted();
 	bool isPaused();
