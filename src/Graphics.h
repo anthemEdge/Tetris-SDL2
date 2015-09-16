@@ -11,13 +11,14 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <string>
-
+#include "LTimer.h"
 using namespace std;
 
 class Graphics {
 public:
 	const static int SCREEN_WIDTH = 476;
 	const static int SCREEN_HEIGHT = 672;
+	const static int TICKS_PER_FRAME_LIMIT = 16;
 
 public:
 	Graphics();
@@ -34,6 +35,7 @@ public:
 	SDL_Renderer* getRenderer();
 
 private:
+	LTimer mFrameTimer;		// For system without VSync
 	SDL_Window* mWindow;
 	SDL_Renderer* mRenderer;
 	TTF_Font* mFont;

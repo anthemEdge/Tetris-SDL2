@@ -21,7 +21,7 @@ src/Tetris.d: ../src/Tetris.cpp /usr/include/SDL2/SDL.h \
  /usr/include/SDL2/SDL_render.h /usr/include/SDL2/SDL_system.h \
  /usr/include/SDL2/SDL_timer.h /usr/include/SDL2/SDL_version.h \
  /usr/include/SDL2/SDL_ttf.h /usr/include/SDL2/SDL.h ../src/Graphics.h \
- ../src/LTexture.h /usr/include/SDL2/SDL_image.h ../src/LTimer.h \
+ ../src/LTimer.h ../src/LTexture.h /usr/include/SDL2/SDL_image.h \
  ../src/Tetromino.h ../src/Playfield.h
 
 /usr/include/SDL2/SDL.h:
@@ -116,11 +116,11 @@ src/Tetris.d: ../src/Tetris.cpp /usr/include/SDL2/SDL.h \
 
 ../src/Graphics.h:
 
+../src/LTimer.h:
+
 ../src/LTexture.h:
 
 /usr/include/SDL2/SDL_image.h:
-
-../src/LTimer.h:
 
 ../src/Tetromino.h:
 

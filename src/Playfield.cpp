@@ -8,9 +8,9 @@
 #include "Playfield.h"
 
 Playfield::Playfield(SDL_Renderer* renderer) :
-		mRenderer(renderer), screenWidth(0), screenHeight(0), mLevel(1), mCurrentPosX(
-				0), mCurrentPosY(0), mFont(NULL), mHoldLock(false), mLockDelay(
-				500), mGameOver(false), mLeft(false), mRight(false) {
+		mGameState(GAME_STATE_PAUSED), mRenderer(renderer), screenWidth(0), screenHeight(
+				0), mLevel(1), mCurrentPosX(0), mCurrentPosY(0), mFont(NULL), mHoldLock(
+				false), mLockDelay(500), mLeft(false), mRight(false) {
 
 	// Colour Array
 	mColourArray.push_back( { 0x00, 0xBF, 0xFF });	// Cyan
@@ -35,40 +35,36 @@ Playfield::Playfield(SDL_Renderer* renderer) :
 
 	// Randem Seed
 	srand(time(NULL));
-
-	init();
-
 }
 
-void Playfield::init() {
-	//printf("Init Called\n");
-	// Initialise primitive
+void Playfield::start() {
+	// Empty PlayField
 	for (int x = 0; x < PF_WIDTH; x++) {
 		for (int y = 0; y < PF_HEIGHT; y++) {
 			// Fill every element to be -1
 			mPlayField[x][y] = -1;
 		}
 	}
-	mGame.start();	// Start timer
-	checkQueue();
-	// Genesis
-	newTetromino();
-	//printf("New Tetromino\n");
-}
-
-void Playfield::reset() {
+	// Reset variables
 	mLevel = 1;
 	mCurrentPosX = 0;
 	mCurrentPosY = 0;
 	mHoldLock = false;
 	mLockDelay = 500;
-	mGameOver = false;
 	mLeft = false;
 	mRight = false;
 	mQueue.clear();
 	mHoldTetromino.clear();
 	mCurrentTetromino.clear();
-	init();
+
+	mGameState = GAME_STATE_INGAME;
+	// Start Timer
+	mGlobalTimer.start();
+	mElapsedTimer.start();
+	// Generate new Queues
+	checkQueue();
+	newTetromino();
+
 }
 
 void Playfield::setScreenSize(int width, int height) {
@@ -76,9 +72,11 @@ void Playfield::setScreenSize(int width, int height) {
 	screenHeight = height;
 }
 
-void Playfield::tic(int elapsed) {
+void Playfield::tick() {
 
-	if (!mGameOver) {
+	int elapsed = mElapsedTimer.getTicks();
+
+	if (mGameState == GAME_STATE_INGAME) {
 		checkQueue();
 		// Update y position
 		double speed = 0.75 * mLevel / 1000.0; // grid per ms
@@ -100,6 +98,8 @@ void Playfield::tic(int elapsed) {
 			}
 		}
 	}
+
+	mElapsedTimer.reset();
 }
 
 void Playfield::draw() {
@@ -155,7 +155,7 @@ void Playfield::draw() {
 			}
 		}
 	}
-	if (!mGameOver) {
+	if (mGameState != GAME_STATE_PAUSED) {
 
 		// Drawing text
 		mNext.render(playArea.x + playArea.w + PF_BLOCKSIZE,
@@ -205,7 +205,7 @@ void Playfield::draw() {
 	gameTime.setRenderer(mRenderer);
 	stringstream timeSS;
 	timeSS << "Time: ";
-	timeSS << (int) (mGame.getTicks() / 1000);
+	timeSS << (int) (mGlobalTimer.getTicks() / 1000);
 	gameTime.loadFromRenderedText(mFont, timeSS.str().c_str(),
 			mColourArray.at(7));
 	gameTime.render(playFieldTopLeft.x + 6 * PF_BLOCKSIZE,
@@ -213,7 +213,7 @@ void Playfield::draw() {
 }
 
 void Playfield::handleEvent(SDL_Event& event) {
-	if (!mGameOver) {
+	if (mGameState == GAME_STATE_INGAME) {
 
 		if (event.type == SDL_KEYDOWN) {
 			switch (event.key.keysym.sym) {
@@ -296,12 +296,12 @@ void Playfield::handleEvent(SDL_Event& event) {
 }
 
 vector<int> Playfield::randomiser() {
-// Generate nature array
+	// Generate nature array
 	vector<int> random;
 	for (int i = 0; i < 7; i++) {
 		random.push_back(i);
 	}
-// Shuffle and return
+	// Shuffle and return
 	random_shuffle(random.begin(), random.end());
 	return random;
 }
@@ -315,9 +315,7 @@ void Playfield::checkQueue() {
 }
 
 void Playfield::newTetromino(int tType) {
-	//printf("newPiece\n");
 	// Generate new Piece
-
 	if (tType == -1) {
 		tType = mQueue.back();
 		// Remove generate piece from the queue
@@ -344,8 +342,8 @@ void Playfield::newTetromino(int tType) {
 
 	// Check if game is over
 	if (!isLegal(mCurrentPosX, mCurrentPosY)) {
-		mGameOver = true;
-		mGame.pause();
+		mGameState = GAME_STATE_LOST;
+		mGlobalTimer.pause();
 	}
 
 }
@@ -577,11 +575,9 @@ bool Playfield::kick() {
 
 void Playfield::lineCheck() {
 
-// TODO add line clearing animations
-
 	vector<int> completedLine;
 
-// Check every single row
+	// Check every single row
 	for (int row = 0; row < PF_HEIGHT; row++) {
 		int elementInRow = 0;
 		for (int index = 0; index < PF_WIDTH; index++) {
@@ -601,7 +597,7 @@ void Playfield::lineCheck() {
 			}
 		}
 	}
-// Collide when lines are cleared
+	// Collide when lines are cleared
 	if (completedLine.size() != 0) {
 		sort(completedLine.begin(), completedLine.end());// From the top of the playfield
 		for (vector<int>::iterator it = completedLine.begin();
@@ -638,7 +634,7 @@ void Playfield::lineCheck() {
 		}
 
 		if (mLevel > 1000) {
-			mGameOver = true;
+			mGameState = GAME_STATE_WON;
 		}
 
 	}
@@ -665,8 +661,8 @@ double Playfield::roundY(double y) {
 	return y;
 }
 
-bool Playfield::isGameOver() {
-	return mGameOver;
+int Playfield::getGameState() {
+	return mGameState;
 }
 
 int Playfield::getLevel() {

@@ -21,7 +21,7 @@ src/Graphics.d: ../src/Graphics.cpp ../src/Graphics.h \
  /usr/include/SDL2/SDL_power.h /usr/include/SDL2/SDL_render.h \
  /usr/include/SDL2/SDL_system.h /usr/include/SDL2/SDL_timer.h \
  /usr/include/SDL2/SDL_version.h /usr/include/SDL2/SDL_ttf.h \
- /usr/include/SDL2/SDL.h
+ /usr/include/SDL2/SDL.h ../src/LTimer.h
 
 ../src/Graphics.h:
 
@@ -114,3 +114,5 @@ src/Graphics.d: ../src/Graphics.cpp ../src/Graphics.h \
 /usr/include/SDL2/SDL_ttf.h:
 
 /usr/include/SDL2/SDL.h:
+
+../src/LTimer.h:

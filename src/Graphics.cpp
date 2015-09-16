@@ -27,17 +27,7 @@ bool Graphics::init() {
 		TTF_GetError());
 	}
 
-//	// Load front
-//	if (success) {
-//		mFont = TTF_OpenFont("assets/FFFFORWA.TTF", 16);
-//		if (mFont == NULL) {
-//			success = false;
-//			printf("Unable to load font %s! SDL_ttf Error: %s. \n",
-//					"assets/FFFFORWA.TTF", TTF_GetError());
-//		}
-//	}
-
-// Create and Present a Window
+	// Create and Present a Window
 	if (success) {
 		mWindow = SDL_CreateWindow("Tetris", SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
@@ -59,8 +49,10 @@ bool Graphics::init() {
 		}
 	}
 
+	mFrameTimer.start();
+
 	// Hide Cursor
-	//SDL_ShowCursor(0);
+	SDL_ShowCursor(0);
 	// Trap cursor
 	//SDL_SetRelativeMouseMode(SDL_TRUE);
 
@@ -74,8 +66,13 @@ void Graphics::clear() {
 }
 
 void Graphics::render() {
-// Present the renderer
+	// Present the renderer
 	SDL_RenderPresent(mRenderer);
+	// Frame Cap for system out VSync
+	if (mFrameTimer.getTicks() < TICKS_PER_FRAME_LIMIT) {
+		SDL_Delay(TICKS_PER_FRAME_LIMIT - mFrameTimer.getTicks());
+	}
+	mFrameTimer.start();
 }
 
 SDL_Renderer* Graphics::getRenderer() {

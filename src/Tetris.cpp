@@ -27,12 +27,10 @@ int main() {
 	bool quit = !graphics.init();
 
 	// Define a frame rate cap and timer
-	const int FRAME_RATE_CAP = 60;
-	const int IDEAL_TICKS_PER_FRAME = 1000 / FRAME_RATE_CAP;
 	LTimer frameTimer;
 	LTimer fpsTimer;
 	fpsTimer.start();
-	int fpsCounter = 0;
+	int framesCounter = 0;
 	LTexture fpsTexture;
 	fpsTexture.setRenderer(graphics.getRenderer());
 	SDL_Color fpsColour = { 0xFF, 0xFF, 0xFF };
@@ -61,13 +59,10 @@ int main() {
 	gameOverTexture.setRenderer(graphics.getRenderer());
 	gameOverTexture.loadFromRenderedText(gameOverFont, "GAME OVER!", white);
 
-	bool startGame = false;
-
 	//PlayField setup
 	Playfield playField(graphics.getRenderer());
 	playField.setScreenSize(graphics.getScreenWidth(),
 			graphics.getScreenHeight());
-	LTimer playFieldTimer;
 
 	// Pause game status
 
@@ -76,13 +71,13 @@ int main() {
 		frameTimer.start();
 
 		// fps counter
-		int fpsNum = (int) (fpsCounter / (fpsTimer.getTicks() / 1000.f));
+		int fpsNum = round(framesCounter / (fpsTimer.getTicks() / 1000.f));
 		stringstream fpsSS;
 		fpsSS << fpsNum;
 		// fps counter: get only average over the last second
-		if (fpsTimer.getTicks() > 1000) {
+		if (fpsTimer.getTicks() > 4000) {
 			fpsTimer.start();
-			fpsCounter = 0;
+			framesCounter = 0;
 		}
 
 		// Handle user input
@@ -95,9 +90,8 @@ int main() {
 				quit = true;
 			} else if (event.type == SDL_KEYDOWN
 					&& event.key.keysym.sym == SDLK_s) {
-				startGame = true;
-				if (startGame && playField.isGameOver()) {
-					playField.reset();
+				if (playField.getGameState() != GAME_STATE_INGAME) {
+					playField.start();
 				}
 			} else {
 				playField.handleEvent(event);
@@ -111,10 +105,9 @@ int main() {
 				fpsColour);
 		fpsTexture.render(Graphics::SCREEN_WIDTH - fpsTexture.getWidth(), 0);
 
-		if (startGame) {
+		if (playField.getGameState() != GAME_STATE_PAUSED) {
 			// Playfield render
-			playField.tic(playFieldTimer.getTicks());
-			playFieldTimer.start();
+			playField.tick();
 			playField.draw();
 		} else {
 			titleTexture.render(
@@ -130,7 +123,8 @@ int main() {
 					graphics.getScreenHeight() * 3.5 / 6);
 		}
 
-		if (playField.isGameOver()) {
+		if (playField.getGameState() != GAME_STATE_INGAME
+				&& playField.getGameState() != GAME_STATE_PAUSED) {
 			// Draw end game over lay
 			SDL_Rect playArea;
 			playArea.x = playField.PF_BLOCKSIZE;
@@ -150,10 +144,10 @@ int main() {
 					0xFF);
 			SDL_RenderFillRect(graphics.getRenderer(), &playArea);
 
-			if (playField.getLevel() > 1000) {
+			if (playField.getGameState() == GAME_STATE_WON) {
 				gameOverTexture.loadFromRenderedText(gameOverFont, "You Win!",
 						white);
-			} else {
+			} else if (playField.getGameState() == GAME_STATE_LOST) {
 				gameOverTexture.loadFromRenderedText(gameOverFont, "GAME OVER!",
 						white);
 			}
@@ -173,12 +167,7 @@ int main() {
 		}
 		graphics.render();
 
-		fpsCounter++;
-		// Cap frames
-		int frameTicks = frameTimer.getTicks();
-		if (frameTicks < IDEAL_TICKS_PER_FRAME) {
-			SDL_Delay(IDEAL_TICKS_PER_FRAME - frameTicks);
-		}
+		framesCounter++;
 	}
 
 	return 0;

@@ -9,7 +9,6 @@
 #define PLAYFIELD_H_
 
 #include <iostream> // cout
-
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include "LTexture.h"
@@ -20,21 +19,28 @@
 #include <algorithm> // shuffle
 #include <cstdlib> // rand and srand
 #include <sstream>
+#include "Tetromino.h"
 
 using namespace std;
 
-#include "Tetromino.h"
+enum GameState {
+	GAME_STATE_INGAME,
+	GAME_STATE_PAUSED,
+	GAME_STATE_WON,
+	GAME_STATE_LOST,
+	GAME_STATE_QUIT
+};
 
 class Playfield {
 public:
 	Playfield(SDL_Renderer* renderer);
-	void tic(int elapsed);
+	void tick();
 	void draw(); // add the grid to render
 	void setScreenSize(int width, int height);
 	void handleEvent(SDL_Event& event);
-	bool isGameOver();
+	int getGameState();
 	int getLevel();
-	void reset();
+	void start();
 
 public:
 	static const int PF_WIDTH = 10;
@@ -42,8 +48,9 @@ public:
 	static const int PF_BLOCKSIZE = 28;
 
 private:
-
-	LTimer mGame;
+	int mGameState;
+	LTimer mGlobalTimer;
+	LTimer mElapsedTimer;
 
 	int mPlayField[PF_WIDTH][PF_HEIGHT];
 	vector<SDL_Color> mColourArray;
@@ -69,14 +76,10 @@ private:
 	LTimer mLockDelayTimer;
 	int mLockDelay;
 
-	bool mGameOver;
-
 	bool mLeft;
 	bool mRight;
 
 private:
-	void init();
-
 	vector<int> randomiser();
 	void checkQueue();
 	void newTetromino(int tType = -1);
