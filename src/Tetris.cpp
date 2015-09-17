@@ -21,6 +21,15 @@
 #include "Playfield.h"
 using namespace std;
 
+enum TextureIndex {
+	TEXTURE_INDEX_TITLE,
+	TEXTURE_INDEX_START,
+	TEXTURE_INDEX_QUIT,
+	TEXTURE_INDEX_GAMEOVER,
+	TEXTURE_INDEX_YOUWIN,
+	TEXTURE_INDEX_TOTAL
+};
+
 int main() {
 	// Setup main graphics
 	Graphics graphics;
@@ -33,38 +42,43 @@ int main() {
 	int framesCounter = 0;
 	LTexture fpsTexture;
 	fpsTexture.setRenderer(graphics.getRenderer());
-	SDL_Color fpsColour = { 0xFF, 0xFF, 0xFF };
+	SDL_Color white = { 0xFF, 0xFF, 0xFF };
 
-	// Load frame rate text font
+	// Loading fonts
 	TTF_Font* fpsFont = TTF_OpenFont("assets/FFFFORWA.TTF", 12);
 	TTF_Font* titleFont = TTF_OpenFont("assets/FFFFORWA.TTF", 96);
-	TTF_Font* buttonFont = TTF_OpenFont("assets/FFFFORWA.TTF", 18);
-	TTF_Font* gameOverFont = TTF_OpenFont("assets/FFFFORWA.TTF", 32);
+	TTF_Font* instructionFont = TTF_OpenFont("assets/FFFFORWA.TTF", 18);
+	TTF_Font* resultFont = TTF_OpenFont("assets/FFFFORWA.TTF", 32);
 
-	// Title texture
-	SDL_Color white = { 0xFF, 0xFF, 0xFF };
-	LTexture titleTexture;
-	titleTexture.setRenderer(graphics.getRenderer());
-	titleTexture.loadFromRenderedText(titleFont, "Tetris", white);
+	// Loading textures
+	// set renders
+	LTexture textureArray[TEXTURE_INDEX_TOTAL];
+	for (int i = 0; i < TEXTURE_INDEX_TOTAL; i++) {
+		textureArray[i].setRenderer(graphics.getRenderer());
+	}
+	// Title
+	textureArray[TEXTURE_INDEX_TITLE].loadFromRenderedText(titleFont, "Tetris",
+			white);
+	TTF_CloseFont(titleFont);
 
-	LTexture startTexture;
-	startTexture.setRenderer(graphics.getRenderer());
-	startTexture.loadFromRenderedText(buttonFont, "Press [S] to Start", white);
+	// Start and quit instuctions
+	textureArray[TEXTURE_INDEX_START].loadFromRenderedText(instructionFont,
+			"Press [S] to Start", white);
+	textureArray[TEXTURE_INDEX_QUIT].loadFromRenderedText(instructionFont,
+			"Press [Q] to Quit", white);
+	TTF_CloseFont(instructionFont);
 
-	LTexture quitTexture;
-	quitTexture.setRenderer(graphics.getRenderer());
-	quitTexture.loadFromRenderedText(buttonFont, "Press [Q] to Quit", white);
-
-	LTexture gameOverTexture;
-	gameOverTexture.setRenderer(graphics.getRenderer());
-	gameOverTexture.loadFromRenderedText(gameOverFont, "GAME OVER!", white);
+	// Results
+	textureArray[TEXTURE_INDEX_GAMEOVER].loadFromRenderedText(resultFont,
+			"GAME OVER!", white);
+	textureArray[TEXTURE_INDEX_YOUWIN].loadFromRenderedText(resultFont,
+			"YOU WIN!", white);
+	TTF_CloseFont(resultFont);
 
 	//PlayField setup
-	Playfield playField(graphics.getRenderer());
-	playField.setScreenSize(graphics.getScreenWidth(),
+	Playfield playfield(graphics.getRenderer());
+	playfield.setScreenSize(graphics.getScreenWidth(),
 			graphics.getScreenHeight());
-
-	// Pause game status
 
 	// Game loop
 	while (!quit) {
@@ -90,49 +104,45 @@ int main() {
 				quit = true;
 			} else if (event.type == SDL_KEYDOWN
 					&& event.key.keysym.sym == SDLK_s) {
-				if (playField.getGameState() != GAME_STATE_INGAME) {
-					playField.start();
+				if (playfield.getGameState() != GAME_STATE_INGAME) {
+					playfield.start();
 				}
 			} else {
-				playField.handleEvent(event);
+				playfield.handleEvent(event);
 			}
 		}
 
 		// Render Loop
 		graphics.clear();
 		// Render fps counter to the top right corner
-		fpsTexture.loadFromRenderedText(fpsFont, fpsSS.str().c_str(),
-				fpsColour);
-		fpsTexture.render(Graphics::SCREEN_WIDTH - fpsTexture.getWidth(), 0);
+		fpsTexture.loadFromRenderedText(fpsFont, fpsSS.str().c_str(), white);
+		fpsTexture.draw(Graphics::SCREEN_WIDTH - fpsTexture.getWidth(), 0);
 
-		if (playField.getGameState() != GAME_STATE_PAUSED) {
+		if (playfield.getGameState() != GAME_STATE_PAUSED) {
 			// Playfield render
-			playField.tick();
-			playField.draw();
+			playfield.tick();
+			playfield.draw();
 		} else {
-			titleTexture.render(
-					(graphics.SCREEN_WIDTH - titleTexture.getWidth()) / 2,
+			textureArray[TEXTURE_INDEX_TITLE].draw(
+					(graphics.SCREEN_WIDTH
+							- textureArray[TEXTURE_INDEX_TITLE].getWidth()) / 2,
 					graphics.getScreenHeight() / 6);
 
-			startTexture.render(
-					(graphics.SCREEN_WIDTH - startTexture.getWidth()) / 2,
+			textureArray[TEXTURE_INDEX_START].draw(
+					(graphics.SCREEN_WIDTH
+							- textureArray[TEXTURE_INDEX_START].getWidth()) / 2,
 					graphics.getScreenHeight() * 3 / 6);
 
-			quitTexture.render(
-					(graphics.SCREEN_WIDTH - quitTexture.getWidth()) / 2,
+			textureArray[TEXTURE_INDEX_QUIT].draw(
+					(graphics.SCREEN_WIDTH
+							- textureArray[TEXTURE_INDEX_QUIT].getWidth()) / 2,
 					graphics.getScreenHeight() * 3.5 / 6);
 		}
 
-		if (playField.getGameState() != GAME_STATE_INGAME
-				&& playField.getGameState() != GAME_STATE_PAUSED) {
+		if (playfield.getGameState() != GAME_STATE_INGAME
+				&& playfield.getGameState() != GAME_STATE_PAUSED) {
 			// Draw end game over lay
-			SDL_Rect playArea;
-			playArea.x = playField.PF_BLOCKSIZE;
-			playArea.y = graphics.SCREEN_HEIGHT
-					- (playField.PF_HEIGHT - 1) * playField.PF_BLOCKSIZE;
-			playArea.w = playField.PF_WIDTH * playField.PF_BLOCKSIZE;
-			playArea.h = (playField.PF_HEIGHT - 2) * playField.PF_BLOCKSIZE;
-
+			SDL_Rect playArea = playfield.getPlayArea();
 			SDL_SetRenderDrawBlendMode(graphics.getRenderer(),
 					SDL_BLENDMODE_BLEND);
 			SDL_SetRenderDrawColor(graphics.getRenderer(), 0x00, 0x00, 0x00,
@@ -144,25 +154,28 @@ int main() {
 					0xFF);
 			SDL_RenderFillRect(graphics.getRenderer(), &playArea);
 
-			if (playField.getGameState() == GAME_STATE_WON) {
-				gameOverTexture.loadFromRenderedText(gameOverFont, "You Win!",
-						white);
-			} else if (playField.getGameState() == GAME_STATE_LOST) {
-				gameOverTexture.loadFromRenderedText(gameOverFont, "GAME OVER!",
-						white);
+			int resultIndex = TEXTURE_INDEX_GAMEOVER;
+			if (playfield.getGameState() == GAME_STATE_WON) {
+				resultIndex = TEXTURE_INDEX_YOUWIN;
 			}
+			textureArray[resultIndex].draw(
+					playArea.x
+							+ (playArea.w - textureArray[resultIndex].getWidth())
+									/ 2, playArea.y + playfield.PF_BLOCKSIZE);
 
-			gameOverTexture.render(
-					playArea.x + (playArea.w - gameOverTexture.getWidth()) / 2,
-					playArea.y + playField.PF_BLOCKSIZE);
+			textureArray[TEXTURE_INDEX_START].draw(
+					playArea.x
+							+ (playArea.w
+									- textureArray[TEXTURE_INDEX_START].getWidth())
+									/ 2,
+					playArea.y + 3 * playfield.PF_BLOCKSIZE);
 
-			startTexture.render(
-					playArea.x + (playArea.w - startTexture.getWidth()) / 2,
-					playArea.y + 3 * playField.PF_BLOCKSIZE);
-
-			quitTexture.render(
-					playArea.x + (playArea.w - startTexture.getWidth()) / 2,
-					playArea.y + 4 * playField.PF_BLOCKSIZE);
+			textureArray[TEXTURE_INDEX_QUIT].draw(
+					playArea.x
+							+ (playArea.w
+									- textureArray[TEXTURE_INDEX_QUIT].getWidth())
+									/ 2,
+					playArea.y + 4 * playfield.PF_BLOCKSIZE);
 
 		}
 		graphics.render();

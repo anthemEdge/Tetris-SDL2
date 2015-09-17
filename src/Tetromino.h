@@ -34,7 +34,7 @@ class Tetromino {
 public:
 	Tetromino();
 
-// Generate a specified tetromino, default is random
+	// Generate a specified tetromino, default is random
 	void generate(int type = -1);
 	void clock();
 	void antiClock();

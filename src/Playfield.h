@@ -31,6 +31,19 @@ enum GameState {
 	GAME_STATE_QUIT
 };
 
+enum ColourIndex {
+	COLOUR_INDEX_CYAN,
+	COLOUR_INDEX_YELLOW,
+	COLOUR_INDEX_PURPLE,
+	COLOUR_INDEX_GREEN,
+	COLOUR_INDEX_RED,
+	COLOUR_INDEX_BLUE,
+	COLOUR_INDEX_ORANGE,
+	COLOUR_INDEX_WHITE,
+	COLOUR_INDEX_GREY,
+	COLOUR_INDEX_TOTAL
+};
+
 class Playfield {
 public:
 	Playfield(SDL_Renderer* renderer);
@@ -39,8 +52,8 @@ public:
 	void setScreenSize(int width, int height);
 	void handleEvent(SDL_Event& event);
 	int getGameState();
-	int getLevel();
 	void start();
+	SDL_Rect getPlayArea();
 
 public:
 	static const int PF_WIDTH = 10;
@@ -52,8 +65,9 @@ private:
 	LTimer mGlobalTimer;
 	LTimer mElapsedTimer;
 
-	int mPlayField[PF_WIDTH][PF_HEIGHT];
-	vector<SDL_Color> mColourArray;
+	SDL_Rect mPlayArea;
+	int mPlayfield[PF_WIDTH][PF_HEIGHT];
+	SDL_Color mColourArray[COLOUR_INDEX_TOTAL];
 	SDL_Renderer* mRenderer;
 
 	int screenWidth;
@@ -74,7 +88,7 @@ private:
 	bool mHoldLock;
 
 	LTimer mLockDelayTimer;
-	int mLockDelay;
+	unsigned int mLockDelay;
 
 	bool mLeft;
 	bool mRight;

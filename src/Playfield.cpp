@@ -13,27 +13,28 @@ Playfield::Playfield(SDL_Renderer* renderer) :
 				false), mLockDelay(500), mLeft(false), mRight(false) {
 
 	// Colour Array
-	mColourArray.push_back( { 0x00, 0xBF, 0xFF });	// Cyan
-	mColourArray.push_back( { 0xFF, 0xD7, 0x00 });	// Yellow
-	mColourArray.push_back( { 0x80, 0x00, 0x80 });	// Purple
-	mColourArray.push_back( { 0x00, 0xFF, 0x00 });	// Green
-	mColourArray.push_back( { 0xFF, 0x00, 0x00 });	// Red
-	mColourArray.push_back( { 0x00, 0x00, 0xFF });	// Blue
-	mColourArray.push_back( { 0xFF, 0x8C, 0x00 });	// Orange
-	mColourArray.push_back( { 0xFF, 0xFF, 0xFF });	// white, has a index of 7
+	mColourArray[COLOUR_INDEX_CYAN] = {0x00, 0xBF, 0xFF};
+	mColourArray[COLOUR_INDEX_YELLOW] = {0xFF, 0xD7, 0x00};
+	mColourArray[COLOUR_INDEX_PURPLE] = {0x80, 0x00, 0x80};
+	mColourArray[COLOUR_INDEX_GREEN] = {0x00, 0xFF, 0x00};
+	mColourArray[COLOUR_INDEX_RED] = {0xFF, 0x00, 0x00};
+	mColourArray[COLOUR_INDEX_BLUE] = {0x00, 0x00, 0xFF};
+	mColourArray[COLOUR_INDEX_ORANGE] = {0xFF, 0x8C, 0x00};
+	mColourArray[COLOUR_INDEX_WHITE] = {0xFF, 0xFF, 0xFF};
+	mColourArray[COLOUR_INDEX_GREY] = {0x80, 0x80, 0x80};
 
 	// Load Text font
 	mFont = TTF_OpenFont("assets/FFFFORWA.TTF", PF_BLOCKSIZE);
 	if (mFont == NULL) {
 		printf("Failed to load font for play field! TTF_Error: %s. \n",
-		TTF_GetError());
+				TTF_GetError());
 	}
 	mNext.setRenderer(mRenderer);
-	mNext.loadFromRenderedText(mFont, "NEXT:", mColourArray.at(7));
+	mNext.loadFromRenderedText(mFont, "NEXT:", mColourArray[COLOUR_INDEX_WHITE]);
 	mHold.setRenderer(mRenderer);
-	mHold.loadFromRenderedText(mFont, "HOLD: ", mColourArray.at(7));
+	mHold.loadFromRenderedText(mFont, "HOLD: ", mColourArray[COLOUR_INDEX_WHITE]);
 
-	// Randem Seed
+	// Random Seed
 	srand(time(NULL));
 }
 
@@ -42,7 +43,7 @@ void Playfield::start() {
 	for (int x = 0; x < PF_WIDTH; x++) {
 		for (int y = 0; y < PF_HEIGHT; y++) {
 			// Fill every element to be -1
-			mPlayField[x][y] = -1;
+			mPlayfield[x][y] = -1;
 		}
 	}
 	// Reset variables
@@ -70,6 +71,11 @@ void Playfield::start() {
 void Playfield::setScreenSize(int width, int height) {
 	screenWidth = width;
 	screenHeight = height;
+	// playfield position on screen
+	mPlayArea.x = PF_BLOCKSIZE;
+	mPlayArea.y = screenHeight - (PF_HEIGHT - 1) * PF_BLOCKSIZE;
+	mPlayArea.w = PF_WIDTH * PF_BLOCKSIZE;
+	mPlayArea.h = (PF_HEIGHT - 2) * PF_BLOCKSIZE;
 }
 
 void Playfield::tick() {
@@ -84,7 +90,7 @@ void Playfield::tick() {
 
 		// Can't move down anymore
 		if (!isLegal(mCurrentPosX, mCurrentPosY)) {
-			// Reverse position & change to lowest possile position
+			// Reverse position & change to lowest possible position
 			mCurrentPosY -= (speed * elapsed);
 			mCurrentPosY = project();
 
@@ -103,37 +109,30 @@ void Playfield::tick() {
 }
 
 void Playfield::draw() {
-// Top left point of the play Field
-	SDL_Point playFieldTopLeft = { PF_BLOCKSIZE, screenHeight
-			- (PF_HEIGHT - 1) * PF_BLOCKSIZE };
 
-// Drawing the play Area
-	SDL_Rect playArea;
-	playArea.x = playFieldTopLeft.x;
-	playArea.y = playFieldTopLeft.y;
-	playArea.w = PF_WIDTH * PF_BLOCKSIZE;
-	playArea.h = (PF_HEIGHT - 2) * PF_BLOCKSIZE;
-	SDL_Color grey = { 0x80, 0x80, 0x80 };
-	SDL_Color white = mColourArray.at(7);
-	SDL_SetRenderDrawColor(mRenderer, grey.r, grey.g, grey.b, 0xFF);
-	SDL_RenderFillRect(mRenderer, &playArea);
-	SDL_SetRenderDrawColor(mRenderer, white.r, white.g, white.b, 0xFF);
-	SDL_RenderDrawRect(mRenderer, &playArea);
+	// Drawing the play Area
+	SDL_SetRenderDrawColor(mRenderer, mColourArray[COLOUR_INDEX_GREY].r,
+			mColourArray[COLOUR_INDEX_GREY].g,
+			mColourArray[COLOUR_INDEX_GREY].b, 0xFF);
+	SDL_RenderFillRect(mRenderer, &mPlayArea);
+	SDL_SetRenderDrawColor(mRenderer, mColourArray[COLOUR_INDEX_WHITE].r,
+			mColourArray[COLOUR_INDEX_WHITE].g,
+			mColourArray[COLOUR_INDEX_WHITE].b, 0xFF);
+	SDL_RenderDrawRect(mRenderer, &mPlayArea);
 
-// Drawing the Current Tetromino and its ghost pieces
+	// Drawing the Current Tetromino and its ghost pieces
 	double roundedY = roundY(mCurrentPosY);
-// Centre of the Tetromino on display
-// -2 on y to correct for hidden rows
+	// Centre of the Tetromino on display
+	// -2 on y to correct for hidden rows
 	SDL_Point currentCentreOnDisplay;
-	currentCentreOnDisplay.x = (int) (playFieldTopLeft.x
-			+ mCurrentPosX * PF_BLOCKSIZE);
-	currentCentreOnDisplay.y = (int) (playFieldTopLeft.y
+	currentCentreOnDisplay.x =
+			(int) (mPlayArea.x + mCurrentPosX * PF_BLOCKSIZE);
+	currentCentreOnDisplay.y = (int) (mPlayArea.y
 			+ (roundedY - 2) * PF_BLOCKSIZE);
 
 	SDL_Point ghostCenterOnDisplay;
 	ghostCenterOnDisplay.x = currentCentreOnDisplay.x;
-	ghostCenterOnDisplay.y = playFieldTopLeft.y
-			+ (project() - 2) * PF_BLOCKSIZE;
+	ghostCenterOnDisplay.y = mPlayArea.y + (project() - 2) * PF_BLOCKSIZE;
 
 	drawTetromino(ghostCenterOnDisplay, mCurrentTetromino, true);
 	drawTetromino(currentCentreOnDisplay, mCurrentTetromino);
@@ -144,11 +143,11 @@ void Playfield::draw() {
 		for (int col = 2; col < PF_HEIGHT; col++) {
 			// Block position
 			SDL_Point blockTopLeft;
-			blockTopLeft.x = playFieldTopLeft.x + PF_BLOCKSIZE * row;
-			blockTopLeft.y = playFieldTopLeft.y + PF_BLOCKSIZE * (col - 2);
+			blockTopLeft.x = mPlayArea.x + PF_BLOCKSIZE * row;
+			blockTopLeft.y = mPlayArea.y + PF_BLOCKSIZE * (col - 2);
 
 			// Get the colour of the block
-			int element = mPlayField[row][col];
+			int element = mPlayfield[row][col];
 			// if the element is valid
 			if (element >= 0 && element < 7) {
 				drawBlock(blockTopLeft, element);
@@ -158,13 +157,13 @@ void Playfield::draw() {
 	if (mGameState != GAME_STATE_PAUSED) {
 
 		// Drawing text
-		mNext.render(playArea.x + playArea.w + PF_BLOCKSIZE,
-				playFieldTopLeft.y + PF_BLOCKSIZE);
+		mNext.draw(mPlayArea.x + mPlayArea.w + PF_BLOCKSIZE,
+				mPlayArea.y + PF_BLOCKSIZE);
 		// Draw upcoming tetromino
 
 		SDL_Point currentNext;
-		currentNext.x = playArea.x + playArea.w + PF_BLOCKSIZE;
-		currentNext.y = playArea.y + 3 * PF_BLOCKSIZE;
+		currentNext.x = mPlayArea.x + mPlayArea.w + PF_BLOCKSIZE;
+		currentNext.y = mPlayArea.y + 3 * PF_BLOCKSIZE;
 		for (int i = 1; i < 5; i++) {
 			Tetromino upcoming;
 			upcoming.generate(mQueue.at(mQueue.size() - i));
@@ -181,9 +180,9 @@ void Playfield::draw() {
 		}
 
 		// Draw hold text and tetromino
-		SDL_Point holdTopLeft = { playArea.x + playArea.w + PF_BLOCKSIZE,
-				playFieldTopLeft.y + 16 * PF_BLOCKSIZE };
-		mHold.render(holdTopLeft.x, holdTopLeft.y);
+		SDL_Point holdTopLeft = { mPlayArea.x + mPlayArea.w + PF_BLOCKSIZE,
+				mPlayArea.y + 16 * PF_BLOCKSIZE };
+		mHold.draw(holdTopLeft.x, holdTopLeft.y);
 		holdTopLeft.y += 2 * PF_BLOCKSIZE;	// Spacing
 		SDL_Point holdCenter = topLeftToCenter(holdTopLeft,
 				mHoldTetromino.getTType());
@@ -197,8 +196,8 @@ void Playfield::draw() {
 	levelSS << "Lvl: ";
 	levelSS << mLevel;
 	levelText.loadFromRenderedText(mFont, levelSS.str().c_str(),
-			mColourArray.at(7));
-	levelText.render(playFieldTopLeft.x, playFieldTopLeft.y - 2 * PF_BLOCKSIZE);
+			mColourArray[COLOUR_INDEX_WHITE]);
+	levelText.draw(mPlayArea.x, mPlayArea.y - 2 * PF_BLOCKSIZE);
 
 	// Draw time info
 	LTexture gameTime;
@@ -207,9 +206,9 @@ void Playfield::draw() {
 	timeSS << "Time: ";
 	timeSS << (int) (mGlobalTimer.getTicks() / 1000);
 	gameTime.loadFromRenderedText(mFont, timeSS.str().c_str(),
-			mColourArray.at(7));
-	gameTime.render(playFieldTopLeft.x + 6 * PF_BLOCKSIZE,
-			playFieldTopLeft.y - 2 * PF_BLOCKSIZE);
+			mColourArray[COLOUR_INDEX_WHITE]);
+	gameTime.draw(mPlayArea.x + 6 * PF_BLOCKSIZE,
+			mPlayArea.y - 2 * PF_BLOCKSIZE);
 }
 
 void Playfield::handleEvent(SDL_Event& event) {
@@ -349,13 +348,13 @@ void Playfield::newTetromino(int tType) {
 }
 
 SDL_Point Playfield::topLeftToCenter(SDL_Point& topLeft, int tType) {
-// This only works for unroated pieces
+// This only works for unrotaed pieces
 
 	SDL_Point center;
 
 // Get piece centre
 	double dx, dy;
-	dx = 2; // Horziontally centred
+	dx = 2; // Horizontally centred
 	switch (tType) {
 	case TTYPE_I:
 		dy = 1;
@@ -393,7 +392,7 @@ void Playfield::drawBlock(SDL_Point& topLeft, int tType, bool ghost) {
 	block.y = topLeft.y;
 
 	// Drawing block
-	SDL_Color colour = mColourArray.at(tType);
+	SDL_Color colour = mColourArray[tType];
 	SDL_SetRenderDrawColor(mRenderer, colour.r, colour.g, colour.b,
 			transparency);
 	SDL_RenderFillRect(mRenderer, &block);
@@ -451,14 +450,11 @@ void Playfield::drawTetromino(SDL_Point& center, Tetromino& tetromino,
 bool Playfield::isLegal(double x, double y) {
 
 	bool legal = true;
-// Ronud y
+	// Ronud y
 	y = roundY(y);
-//printf("Legal Ronuded Y : %f\n", y);
 
-// Check every single block of current Tetromino
+	// Check every single block of current Tetromino
 	vector<TetrominoCRS> blockPosArray = mCurrentTetromino.getBlockPos();
-
-// printf("BlockposArraySize: %i\n", blockPosArray.size());
 
 	for (vector<TetrominoCRS>::iterator it = blockPosArray.begin();
 			it != blockPosArray.end(); it++) {
@@ -466,7 +462,6 @@ bool Playfield::isLegal(double x, double y) {
 		// Get top left point
 		SDL_Point topLeft = { (int) (x + (it->x - 0.5)), (int) (y
 				+ (it->y - 0.5)) };
-		// printf("Top Left Y: %f\n", topLeft.y);
 
 		// Check for bound
 		if (topLeft.x < 0 || topLeft.x >= PF_WIDTH) {
@@ -476,7 +471,7 @@ bool Playfield::isLegal(double x, double y) {
 			legal = false;
 		}
 		// Check for collision
-		if (mPlayField[topLeft.x][topLeft.y] != -1) {
+		if (mPlayfield[topLeft.x][topLeft.y] != -1) {
 			legal = false;
 		}
 	}
@@ -498,7 +493,7 @@ void Playfield::lock() {
 		int xIndex = (int) (mCurrentPosX + (it->x - 0.5));
 		int yIndex = (int) (y + (it->y - 0.5));
 
-		mPlayField[xIndex][yIndex] = mCurrentTetromino.getTType();
+		mPlayfield[xIndex][yIndex] = mCurrentTetromino.getTType();
 	}
 
 	// Check for complete here and generate new
@@ -518,7 +513,6 @@ void Playfield::hold() {
 			mHoldTetromino.generate(tempType);
 		}
 	}
-
 	mHoldLock = true;
 }
 
@@ -581,7 +575,7 @@ void Playfield::lineCheck() {
 	for (int row = 0; row < PF_HEIGHT; row++) {
 		int elementInRow = 0;
 		for (int index = 0; index < PF_WIDTH; index++) {
-			if (mPlayField[index][row] != -1) {
+			if (mPlayfield[index][row] != -1) {
 				elementInRow++;
 			}
 		}
@@ -593,7 +587,7 @@ void Playfield::lineCheck() {
 
 			// empty the row
 			for (int i = 0; i < PF_WIDTH; i++) {
-				mPlayField[i][row] = -1;
+				mPlayfield[i][row] = -1;
 			}
 		}
 	}
@@ -605,8 +599,8 @@ void Playfield::lineCheck() {
 
 			for (int row = *it - 1; row >= 0; row--) {
 				for (int index = 0; index < PF_WIDTH; index++) {
-					mPlayField[index][row + 1] = mPlayField[index][row];// move the element down by one
-					mPlayField[index][row] = -1;	// Clear original element
+					mPlayfield[index][row + 1] = mPlayfield[index][row];// move the element down by one
+					mPlayfield[index][row] = -1;	// Clear original element
 				}
 			}
 		}
@@ -627,8 +621,7 @@ void Playfield::lineCheck() {
 			break;
 		}
 
-		// Change to lockdelay
-
+		// Change to lock delay
 		if (mLevel > 500 && mLevel < 750) {
 			mLockDelay = 1000 - mLevel;
 		}
@@ -650,7 +643,7 @@ double Playfield::project() {
 }
 
 double Playfield::roundY(double y) {
-// Ronud y
+	// Ronud y
 	if (mCurrentTetromino.getTType() < 2) {
 		// Round to integer
 		y = round(y);
@@ -665,7 +658,7 @@ int Playfield::getGameState() {
 	return mGameState;
 }
 
-int Playfield::getLevel() {
-	return mLevel;
+SDL_Rect Playfield::getPlayArea() {
+	return mPlayArea;
 }
 

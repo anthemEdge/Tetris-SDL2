@@ -15,56 +15,51 @@
 
 using namespace std;
 
-class LTexture
-{
-	public:
-		//Initializes variables
-		LTexture();
+class LTexture {
+public:
+	//Initializes variables
+	LTexture();
 
-		//Deallocates memory
-		~LTexture();
+	//Deallocates memory
+	~LTexture();
 
-		// Set the Renderer for this texture
-		void setRenderer(SDL_Renderer* renderer);
+	// Set the Renderer for this texture
+	void setRenderer(SDL_Renderer* renderer);
 
+	//Creates image from font string
+	bool loadFromRenderedText(TTF_Font* font, string textureText,
+			SDL_Color textColor);
 
-		//Loads image at specified path
-		bool loadFromFile(string path );
+	//Deallocates texture
+	void free();
 
-		#ifdef _SDL_TTF_H
-		//Creates image from font string
-		bool loadFromRenderedText(TTF_Font* font, string textureText, SDL_Color textColor );
-		#endif
+	//Set color modulation
+	void setColor(Uint8 red, Uint8 green, Uint8 blue);
 
-		//Deallocates texture
-		void free();
+	//Set blending
+	void setBlendMode(SDL_BlendMode blending);
 
-		//Set color modulation
-		void setColor( Uint8 red, Uint8 green, Uint8 blue );
+	//Set alpha modulation
+	void setAlpha(Uint8 alpha);
 
-		//Set blending
-		void setBlendMode( SDL_BlendMode blending );
+	//Renders texture at given point
+	void draw(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0,
+			SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
 
-		//Set alpha modulation
-		void setAlpha( Uint8 alpha );
+	//Gets image dimensions
+	int getWidth();
+	int getHeight();
 
-		//Renders texture at given point
-		void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
+private:
+	//The actual hardware texture
+	SDL_Texture* mTexture;
 
-		//Gets image dimensions
-		int getWidth();
-		int getHeight();
+	// The Renderer the texture will be renderng to
+	SDL_Renderer* mRenderer;
 
-	private:
-		//The actual hardware texture
-		SDL_Texture* mTexture;
-
-		// The Renderer the texture will be renderng to
-		SDL_Renderer* mRenderer;
-
-		//Image dimensions
-		int mWidth;
-		int mHeight;
+	//Image dimensions
+	int mWidth;
+	int mHeight;
 };
 
 #endif /* LTEXTURE_H_ */
