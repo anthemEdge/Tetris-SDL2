@@ -1,4 +1,4 @@
-# Tetris SDL2
+# Tetris SDL2, with AI
 A minimalist remake of the classic game Tetris using SDL2.
 
 ------------------------------------------
@@ -10,6 +10,7 @@ I absolutely love the game Tetris and it's challenging nature. There are many re
 
 ## New Feature - Tetris AI
 [AI Video Demo](https://youtu.be/uMKa24My7fE)
+
 The AI uses a beam search. The search depth and beam width can be adjusted in [TetrisAI.h].
 The AI runs in separated threads and controls the same via simulated keyboard input. 
 
