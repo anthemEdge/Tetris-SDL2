@@ -13,18 +13,25 @@
 
 #include <vector>
 
+#include<boost/thread.hpp>
+#include<boost/bind.hpp>
+
 #include "Graphics.h"
 #include "LTexture.h"
 #include "LTimer.h"
 
 #include "Tetromino.h"
 #include "Playfield.h"
+
+#include "TetrisAI.h"
+
 using namespace std;
 
 enum TextureIndex {
 	TEXTURE_INDEX_TITLE,
 	TEXTURE_INDEX_START,
 	TEXTURE_INDEX_QUIT,
+	TEXTURE_INDEX_AI,
 	TEXTURE_INDEX_GAMEOVER,
 	TEXTURE_INDEX_YOUWIN,
 	TEXTURE_INDEX_TOTAL
@@ -66,6 +73,8 @@ int main() {
 			"Press [S] to Start", white);
 	textureArray[TEXTURE_INDEX_QUIT].loadFromRenderedText(instructionFont,
 			"Press [Q] to Quit", white);
+	textureArray[TEXTURE_INDEX_AI].loadFromRenderedText(instructionFont,
+			"Press [A] for AI in Game", white);
 	TTF_CloseFont(instructionFont);
 
 	// Results
@@ -80,10 +89,14 @@ int main() {
 	playfield.setScreenSize(graphics.getScreenWidth(),
 			graphics.getScreenHeight());
 
+	// AI
+	bool aiMode = false;
+	TetrisAI apex;
+	boost::thread_group tGroup;
+
 	// Game loop
 	while (!quit) {
 		frameTimer.start();
-
 		// fps counter
 		int fpsNum = round(framesCounter / (fpsTimer.getTicks() / 1000.f));
 		stringstream fpsSS;
@@ -92,6 +105,25 @@ int main() {
 		if (fpsTimer.getTicks() > 4000) {
 			fpsTimer.start();
 			framesCounter = 0;
+		}
+
+		// AI
+		if (aiMode && playfield.getGameState() == GAME_STATE_INGAME) {
+			apex.setCurrentGame(playfield.getNode(), playfield.getQueue());
+			if (apex.requireNewThread() && !apex.isReady()) {
+				// Terminate all thread
+				tGroup.join_all();
+				// Take less time to think
+				apex.decreaseDepth();
+				tGroup.create_thread(boost::bind(&TetrisAI::search, &apex));
+			} else if (apex.requireNewThread()) {
+				tGroup.create_thread(boost::bind(&TetrisAI::search, &apex));
+			}
+		}
+
+		// Save guard for thread over load
+		if (fpsNum < 55) {
+			tGroup.join_all();
 		}
 
 		// Handle user input
@@ -105,8 +137,12 @@ int main() {
 			} else if (event.type == SDL_KEYDOWN
 					&& event.key.keysym.sym == SDLK_s) {
 				if (playfield.getGameState() != GAME_STATE_INGAME) {
+					apex.resetSearchDepth();
 					playfield.start();
 				}
+			} else if (event.type == SDL_KEYDOWN
+					&& event.key.keysym.sym == SDLK_a) {
+				aiMode = !aiMode;
 			} else {
 				playfield.handleEvent(event);
 			}
@@ -137,6 +173,10 @@ int main() {
 					(graphics.SCREEN_WIDTH
 							- textureArray[TEXTURE_INDEX_QUIT].getWidth()) / 2,
 					graphics.getScreenHeight() * 3.5 / 6);
+			textureArray[TEXTURE_INDEX_AI].draw(
+					(graphics.SCREEN_WIDTH
+							- textureArray[TEXTURE_INDEX_AI].getWidth()) / 2,
+					graphics.getScreenHeight() * 4 / 6);
 		}
 
 		if (playfield.getGameState() != GAME_STATE_INGAME
@@ -176,7 +216,6 @@ int main() {
 									- textureArray[TEXTURE_INDEX_QUIT].getWidth())
 									/ 2,
 					playArea.y + 4 * playfield.PF_BLOCKSIZE);
-
 		}
 		graphics.render();
 

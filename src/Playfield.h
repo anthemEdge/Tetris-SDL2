@@ -20,6 +20,7 @@
 #include <cstdlib> // rand and srand
 #include <sstream>
 #include "Tetromino.h"
+#include "PlayfieldNode.h"
 
 using namespace std;
 
@@ -56,9 +57,15 @@ public:
 	SDL_Rect getPlayArea();
 
 public:
+	// AI communication
+	PlayfieldNode getNode();
+	vector<int> getQueue();
+
+public:
 	static const int PF_WIDTH = 10;
 	static const int PF_HEIGHT = 22;
 	static const int PF_BLOCKSIZE = 28;
+	static const int HORIZONTAL_SPEED = 10;
 
 private:
 	int mGameState;
@@ -101,13 +108,12 @@ private:
 	SDL_Point topLeftToCenter(SDL_Point& topLeft, int tType);
 	void drawTetromino(SDL_Point& center, Tetromino& tetromino, bool ghost =
 			false);
-	bool isLegal(double x, double y);
+	bool isLegal(double x, double y, int rotation = 0);
 
 	void lock();
 	void hold();
 	bool kick();
 	double project();
-	double backTrack();
 	void lineCheck();
 
 	double roundY(double y);

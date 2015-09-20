@@ -1,4 +1,4 @@
-src/Playfield.d: ../src/Playfield.cpp ../src/Playfield.h \
+src/TetrisAI.d: ../src/TetrisAI.cpp ../src/TetrisAI.h \
  /usr/include/SDL2/SDL.h /usr/include/SDL2/SDL_main.h \
  /usr/include/SDL2/SDL_stdinc.h /usr/include/SDL2/SDL_config.h \
  /usr/include/SDL2/SDL_platform.h /usr/include/SDL2/begin_code.h \
@@ -20,11 +20,12 @@ src/Playfield.d: ../src/Playfield.cpp ../src/Playfield.h \
  /usr/include/SDL2/SDL_log.h /usr/include/SDL2/SDL_messagebox.h \
  /usr/include/SDL2/SDL_power.h /usr/include/SDL2/SDL_render.h \
  /usr/include/SDL2/SDL_system.h /usr/include/SDL2/SDL_timer.h \
- /usr/include/SDL2/SDL_version.h /usr/include/SDL2/SDL_ttf.h \
- /usr/include/SDL2/SDL.h ../src/LTexture.h /usr/include/SDL2/SDL_image.h \
- ../src/LTimer.h ../src/Tetromino.h ../src/PlayfieldNode.h
+ /usr/include/SDL2/SDL_version.h ../src/Playfield.h \
+ /usr/include/SDL2/SDL_ttf.h /usr/include/SDL2/SDL.h ../src/LTexture.h \
+ /usr/include/SDL2/SDL_image.h ../src/LTimer.h ../src/Tetromino.h \
+ ../src/PlayfieldNode.h
 
-../src/Playfield.h:
+../src/TetrisAI.h:
 
 /usr/include/SDL2/SDL.h:
 
@@ -111,6 +112,8 @@ src/Playfield.d: ../src/Playfield.cpp ../src/Playfield.h \
 /usr/include/SDL2/SDL_timer.h:
 
 /usr/include/SDL2/SDL_version.h:
+
+../src/Playfield.h:
 
 /usr/include/SDL2/SDL_ttf.h:
 

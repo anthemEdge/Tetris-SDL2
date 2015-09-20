@@ -26,7 +26,7 @@ Playfield::Playfield(SDL_Renderer* renderer) :
 	// Load Text font
 	mFont = TTF_OpenFont("assets/FFFFORWA.TTF", PF_BLOCKSIZE);
 	if (mFont == NULL) {
-		printf("Failed to load font for play field! TTF_Error: %s. \n",
+		printf("Failed to load font for playfield! TTF_Error: %s. \n",
 				TTF_GetError());
 	}
 	mNext.setRenderer(mRenderer);
@@ -85,7 +85,7 @@ void Playfield::tick() {
 	if (mGameState == GAME_STATE_INGAME) {
 		checkQueue();
 		// Update y position
-		double speed = 0.75 * mLevel / 1000.0; // grid per ms
+		double speed = 0.2 * mLevel / 1000.0; // grid per ms
 		mCurrentPosY += (speed * elapsed);
 
 		// Can't move down anymore
@@ -217,9 +217,17 @@ void Playfield::handleEvent(SDL_Event& event) {
 		if (event.type == SDL_KEYDOWN) {
 			switch (event.key.keysym.sym) {
 			case SDLK_LEFT:
+				if (isLegal(mCurrentPosX - 1, mCurrentPosY)) {
+					mCurrentPosX--;
+					mLockDelayTimer.reset();
+				}
 				mLeft = true;
 				break;
 			case SDLK_RIGHT:
+				if (isLegal(mCurrentPosX + 1, mCurrentPosY)) {
+					mCurrentPosX++;
+					mLockDelayTimer.reset();
+				}
 				mRight = true;
 				break;
 			case SDLK_UP:
@@ -274,23 +282,6 @@ void Playfield::handleEvent(SDL_Event& event) {
 			}
 
 		}
-
-		// Core movement
-		if (!(mLeft && mRight)) {
-			if (mLeft) {
-				if (isLegal(mCurrentPosX - 1, mCurrentPosY)) {
-					mCurrentPosX--;
-					mLockDelayTimer.reset();
-				}
-			}
-			if (mRight) {
-				if (isLegal(mCurrentPosX + 1, mCurrentPosY)) {
-					mCurrentPosX++;
-					mLockDelayTimer.reset();
-				}
-			}
-		}
-
 	}
 }
 
@@ -325,6 +316,9 @@ void Playfield::newTetromino(int tType) {
 	// Update new positions
 	switch (tType) {
 	case TTYPE_I:
+		mCurrentPosX = 5;
+		mCurrentPosY = 2;
+		break;
 	case TTYPE_O:
 		mCurrentPosX = 5;
 		mCurrentPosY = 1;
@@ -380,7 +374,6 @@ void Playfield::drawBlock(SDL_Point& topLeft, int tType, bool ghost) {
 	if (ghost) {
 		transparency = 0x80;
 		SDL_SetRenderDrawBlendMode(mRenderer, SDL_BLENDMODE_BLEND);
-		//printf("Drawing ghost at >> %i:%i\n", topLeft.x, topLeft.y);
 	}
 
 	// Forming block
@@ -447,14 +440,19 @@ void Playfield::drawTetromino(SDL_Point& center, Tetromino& tetromino,
 	}
 }
 
-bool Playfield::isLegal(double x, double y) {
+bool Playfield::isLegal(double x, double y, int rotation) {
 
 	bool legal = true;
 	// Ronud y
 	y = roundY(y);
 
 	// Check every single block of current Tetromino
-	vector<TetrominoCRS> blockPosArray = mCurrentTetromino.getBlockPos();
+
+	Tetromino testTetromino = mCurrentTetromino;
+	for (int i = 0; i < rotation; i++) {
+		testTetromino.clock();
+	}
+	vector<TetrominoCRS> blockPosArray = testTetromino.getBlockPos();
 
 	for (vector<TetrominoCRS>::iterator it = blockPosArray.begin();
 			it != blockPosArray.end(); it++) {
@@ -628,6 +626,7 @@ void Playfield::lineCheck() {
 
 		if (mLevel > 1000) {
 			mGameState = GAME_STATE_WON;
+			mGlobalTimer.pause();
 		}
 
 	}
@@ -660,5 +659,31 @@ int Playfield::getGameState() {
 
 SDL_Rect Playfield::getPlayArea() {
 	return mPlayArea;
+}
+
+// AI communications
+PlayfieldNode Playfield::getNode() {
+	PlayfieldNode node;
+	// Generate simplified playfield
+	for (int x = 0; x < PF_WIDTH; x++) {
+		for (int y = 0; y < PF_HEIGHT; y++) {
+			if (mPlayfield[x][y] < 0) {
+				node.mSimplePlayfield[x][y] = false;
+			} else {
+				node.mSimplePlayfield[x][y] = true;
+			}
+		}
+	}
+
+	return node;
+}
+
+vector<int> Playfield::getQueue() {
+	vector<int> queue;
+	queue.push_back(mCurrentTetromino.getTType());
+	for (int i = 0; i < 4; i++) {
+		queue.push_back(mQueue.at(mQueue.size() - 1 - i));
+	}
+	return queue;
 }
 

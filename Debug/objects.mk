@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -lSDL2 -lSDL2_image -lSDL2_ttf
+LIBS := -lSDL2 -lboost_system -lboost_thread -lpthread -lSDL2_ttf
 
